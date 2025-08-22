@@ -1,0 +1,30 @@
+cmake_minimum_required(VERSION 3.15)
+project(CalderaEngine)
+
+set(CMAKE_CXX_STANDARD 23)
+
+# GLFW and OpenGL
+find_package(OpenGL REQUIRED)
+
+# ImGui sources
+file(GLOB IMGUI_SRC
+    "imgui/*.cpp"
+    "imgui/backends/imgui_impl_glfw.cpp"
+    "imgui/backends/imgui_impl_opengl3.cpp"
+)
+
+add_executable(CalderaEngine main.cpp ${IMGUI_SRC})
+
+target_include_directories(CalderaEngine PRIVATE
+    imgui
+    imgui/backends
+)
+
+target_link_libraries(CalderaEngine PRIVATE
+    "-framework Cocoa"
+    "-framework OpenGL"
+    "-framework IOKit"
+    "-framework CoreVideo"
+    glfw
+    GLEW
+)

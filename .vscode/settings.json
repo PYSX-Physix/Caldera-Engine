@@ -1,0 +1,4 @@
+{
+    "makefile.makefilePath": "CmakeLists.txt",
+    "cmake.buildDirectory": "${workspaceFolder}/build/MacOS"
+}

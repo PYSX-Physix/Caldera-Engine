@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "CalderaEngine",
+      "type": "lldb-dap",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/CalderaEngine",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

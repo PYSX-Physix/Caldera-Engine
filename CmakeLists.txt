@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 23)
 
 # GLFW and OpenGL
 find_package(OpenGL REQUIRED)
+find_package(assimp REQUIRED)
+find_package(glm QUIET)
 
 # ImGui sources
 file(GLOB IMGUI_SRC
@@ -13,11 +15,22 @@ file(GLOB IMGUI_SRC
     "imgui/backends/imgui_impl_opengl3.cpp"
 )
 
-add_executable(CalderaEngine main.cpp ${IMGUI_SRC})
+# Renderer sources
+set(RENDERER_SRC
+    renderer/Shader.cpp
+    renderer/Camera.cpp
+    renderer/Mesh.cpp
+    renderer/Model.cpp
+    renderer/Renderer.cpp
+)
+
+# Note: our main file is CalderaEngine.cpp
+add_executable(CalderaEngine CalderaEngine.cpp ${IMGUI_SRC} ${RENDERER_SRC})
 
 target_include_directories(CalderaEngine PRIVATE
     imgui
     imgui/backends
+    renderer
 )
 
 target_link_libraries(CalderaEngine PRIVATE
@@ -27,4 +40,5 @@ target_link_libraries(CalderaEngine PRIVATE
     "-framework CoreVideo"
     glfw
     GLEW
+    assimp
 )

@@ -13,7 +13,7 @@ glm::mat4 Camera::GetProjection(float aspect) const {
 
 void Camera::ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch) {
     const float sensitivity = 0.1f;
-    xoffset *= sensitivity;
+    xoffset *= -1.0 * sensitivity;
     yoffset *= sensitivity;
     Yaw += xoffset;
     Pitch += yoffset;

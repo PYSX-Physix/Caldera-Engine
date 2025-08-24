@@ -169,8 +169,10 @@ int main() {
         ImGui::NewFrame();
 
         {
+			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0,0,0,0));
 			ImGuiID maindock_id = ImGui::GetID("MainDock");
 			ImGui::DockSpaceOverViewport(maindock_id, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoResize);
+            ImGui::PopStyleColor(1);
         }
 
         // 6. Properties / Object chooser
@@ -244,27 +246,30 @@ int main() {
             ImGui::End();
         }
 
+        {
+            // viewport camera controls: when mouse dragged in viewport, rotate camera
+            ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar);
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 0));
+            ImVec2 vpSize = ImGui::GetContentRegionAvail();
+            if (vpSize.y == 0){ vpSize.y = 1; } // avoid issues
+            ImGui::InvisibleButton("canvas", vpSize);
+            bool isDragging = ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left);
+            if (isDragging) {
+                ImVec2 md = io.MouseDelta;
+                camera.ProcessMouseMovement(md.x, md.y);
+            }
+            ImGui::PopStyleColor(1);
+            ImGui::End();
+        }
         // Rendering
         ImGui::Render();
     glEnable(GL_DEPTH_TEST);
-    glClearColor(0.1f, 0.12f, 0.15f, 1.00f);
+    glClearColor(0.0f, 0.00f, 0.00f, 0.00f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // animate light slowly (if you want)
     float t = (float)glfwGetTime();
     //lights[0].Position = glm::vec3(cos(t) * 3.0f, 2.0f, sin(t) * 3.0f);
-
-    // viewport camera controls: when mouse dragged in viewport, rotate camera
-    ImGuiIO& io2 = ImGui::GetIO();
-    ImGui::Begin("Viewport");
-    ImVec2 vpSize = ImGui::GetContentRegionAvail();
-    ImGui::InvisibleButton("canvas", vpSize);
-    bool isDragging = ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left);
-    if (isDragging) {
-        ImVec2 md = io2.MouseDelta;
-        camera.ProcessMouseMovement(md.x, md.y);
-    }
-    ImGui::End();
 
     // build lights list from sceneObjects
     std::vector<Light> lightsList;
@@ -290,7 +295,13 @@ int main() {
     }
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+        {
+            GLFWwindow* backup_current_context = glfwGetCurrentContext();
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+            glfwMakeContextCurrent(backup_current_context);
+        }
         // Swap buffers
         glfwSwapBuffers(window);
     }

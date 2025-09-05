@@ -54,6 +54,14 @@ int main() {
     if (!renderer.Init()) std::cerr << "Renderer init failed" << std::endl;
     Camera camera(glm::vec3(0.0f, 0.0f, 5.0f));
 
+    // -- input / -- timing state
+    float lastFrameTime = 0.0f;
+    float deltaTime = 0.0f;
+    bool firstMouse = true;
+    double lastMouseX = 0.0, lastMouseY = 0.0;
+    bool mouseCaptured = false;
+    const float movementSpeed = 3.0f;
+
     // Scene objects (no lights by default)
     struct SceneObject {
         enum Type { MeshObj, LightObj } type;
@@ -168,7 +176,48 @@ int main() {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+        {
+            double currentFrame = glfwGetTime();
+            deltaTime = (float)(currentFrame - lastFrameTime);
+            lastFrameTime = (float)currentFrame;
+            bool wantLook = (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) && !io.WantCaptureMouse;
+            if (wantLook && !mouseCaptured) {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                mouseCaptured = true;
+                firstMouse = true;
+            } else if (!wantLook && mouseCaptured) {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                mouseCaptured = false;
+            }
 
+            if (mouseCaptured) {
+                double xpos, ypos;
+                glfwGetCursorPos(window, &xpos, &ypos);
+                if (firstMouse) {
+                    lastMouseX = xpos;
+                    lastMouseY = ypos;
+                    firstMouse = false;
+                }
+                float xoffset = (float)(xpos - lastMouseX);
+                float yoffset = (float)(lastMouseY - ypos);
+                lastMouseX = xpos;
+                lastMouseY = ypos;
+                camera.ProcessMouseMovement(xoffset * -1, yoffset);
+            }
+
+            if (!io.WantCaptureKeyboard) {
+                glm::vec3 forward = glm::normalize(camera.Front);
+                glm::vec3 worldUp(0.0f, 1.0f, 0.0f);
+                glm::vec3 right = glm::normalize(glm::cross(forward, worldUp));
+                float velocity = movementSpeed * deltaTime;
+                if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) camera.Position += forward * velocity;
+                if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) camera.Position -= forward * velocity;
+                if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) camera.Position -= right * velocity;
+                if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) camera.Position += right * velocity;
+                if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) camera.Position += worldUp * velocity;
+                if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) camera.Position -= worldUp * velocity;
+            }
+        }
         {
 			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0,0,0,0));
 			ImGuiID maindock_id = ImGui::GetID("MainDock");
@@ -244,22 +293,6 @@ int main() {
                 if (ImGui::Selectable(sceneObjects[i].name.c_str(), isSelected)) selectedObject = i;
                 ImGui::PopID();
             }
-            ImGui::End();
-        }
-
-        {
-            // viewport camera controls: when mouse dragged in viewport, rotate camera
-            ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar);
-            ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 0));
-            ImVec2 vpSize = ImGui::GetContentRegionAvail();
-            if (vpSize.y == 0){ vpSize.y = 1; } // avoid issues
-            ImGui::InvisibleButton("canvas", vpSize);
-            bool isDragging = ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left);
-            if (isDragging) {
-                ImVec2 md = io.MouseDelta;
-                camera.ProcessMouseMovement(md.x, md.y);
-            }
-            ImGui::PopStyleColor(1);
             ImGui::End();
         }
         // Rendering

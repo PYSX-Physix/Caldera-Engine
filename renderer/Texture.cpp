@@ -2,7 +2,7 @@
 #include <GL/glew.h>
 #include <iostream>
 #define STB_IMAGE_IMPLEMENTATION
-#include "misc/stb_image.h"
+#include "../misc/stb_image.h"
 
 Texture::~Texture() { if (ID) glDeleteTextures(1, &ID); }
 

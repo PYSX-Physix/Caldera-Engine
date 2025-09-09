@@ -3,6 +3,7 @@
         {
             "name": "Mac",
             "includePath": [
+                "${workspaceFolder}/misc",
                 "${workspaceFolder}/imgui",
                 "${workspaceFolder}/imgui/backends",
                 "/usr/local/include"

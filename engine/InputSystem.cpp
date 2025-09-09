@@ -1,9 +1,10 @@
 #include "InputSystem.h"
+#include "imgui.h"
 #include <iostream>
 
-InputSystem::InputSystem(GLFWwindow* w) { AttachWindow(w); }
+InputSystem::InputSystem(GLFWwindow* w, ImGuiIO* io) { AttachWindow(w, io); }
 
-void InputSystem::AttachWindow(GLFWwindow* w) {
+void InputSystem::AttachWindow(GLFWwindow* w, ImGuiIO* io) {
     window = w;
     first = true;
 }

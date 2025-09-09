@@ -1,13 +1,14 @@
 #pragma once
 #include <GLFW/glfw3.h>
 #include <utility>
+#include "imgui.h"
 
 #include <array>
 
 class InputSystem {
 public:
-    InputSystem(GLFWwindow* w=nullptr);
-    void AttachWindow(GLFWwindow* w);
+    InputSystem(GLFWwindow* w=nullptr, ImGuiIO* io=nullptr);
+    void AttachWindow(GLFWwindow* w, ImGuiIO* io);
     void Update();
     bool IsKeyDown(int key) const;
     bool IsMouseButtonDown(int btn) const;

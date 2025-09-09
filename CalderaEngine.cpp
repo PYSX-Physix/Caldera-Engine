@@ -63,13 +63,14 @@ int main() {
     // -- input / -- timing state
     float lastFrameTime = 0.0f;
     float deltaTime = 0.0f;
+    bool firstMouse = true;
+    double lastMouseX = 0.0, lastMouseY = 0.0;
+    bool mouseCaptured = false;
+    const float movementSpeed = 3.0f;
 
-    InputSystem inputSys(window);
-    // Game input uses the same window for now; it is a separate logical system so it can be
-    // attached/detached independently in the future when creating a separate play window.
+
     GameInputSystem gameInput(window);
     Character playerChar;
-    PlayerController controller(&inputSys, &gameInput, &camera, &playerChar);
 
     // Scene objects (no lights by default)
     struct SceneObject {
@@ -100,7 +101,6 @@ int main() {
             modelCache.emplace(path, std::move(m));
             return &modelCache.find(path)->second;
         }
-        std::cerr << "Failed to load model resource: " << path << std::endl;
         return nullptr;
     };
 
@@ -147,6 +147,17 @@ int main() {
                 sscanf(rot.c_str(), "%f,%f,%f", &o.rotation.x, &o.rotation.y, &o.rotation.z);
                 sscanf(scl.c_str(), "%f,%f,%f", &o.scale.x, &o.scale.y, &o.scale.z);
                 std::getline(ss, o.material.DiffusePath, '|');
+                if (!o.material.DiffusePath.empty()) {
+                    Texture* tex = new Texture();
+                    if (tex->LoadFromFile(o.material.DiffusePath)) {
+                        o.material.DiffuseTex = tex;
+                        Model* m = GetModel(o.resource);
+                        if (m) m->SetTexture(o.material.DiffuseTex);
+                    } else {
+                        delete tex;
+                        o.material.DiffuseTex = nullptr;
+                    }
+                }
             } else if (token == "LIGHT") {
                 // If the type is a light then read light data
                 o.type = SceneObject::LightObj;
@@ -198,10 +209,43 @@ int main() {
             double currentFrame = glfwGetTime();
             deltaTime = (float)(currentFrame - lastFrameTime);
             lastFrameTime = (float)currentFrame;
+            bool wantLook = (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) && !io.WantCaptureMouse;
+            if (wantLook && !mouseCaptured) {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                mouseCaptured = true;
+                firstMouse = true;
+            } else if (!wantLook && mouseCaptured) {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                mouseCaptured = false;
+            }
 
-            // update engine input and controller
-            inputSys.Update();
-            controller.Update(deltaTime);
+            if (mouseCaptured) {
+                double xpos, ypos;
+                glfwGetCursorPos(window, &xpos, &ypos);
+                if (firstMouse) {
+                    lastMouseX = xpos;
+                    lastMouseY = ypos;
+                    firstMouse = false;
+                }
+                float xoffset = (float)(xpos - lastMouseX);
+                float yoffset = (float)(lastMouseY - ypos);
+                lastMouseX = xpos;
+                lastMouseY = ypos;
+                camera.ProcessMouseMovement(xoffset * -1, yoffset);
+            }
+
+            if (!io.WantCaptureKeyboard) {
+                glm::vec3 forward = glm::normalize(camera.Front);
+                glm::vec3 worldUp(0.0f, 1.0f, 0.0f);
+                glm::vec3 right = glm::normalize(glm::cross(forward, worldUp));
+                float velocity = movementSpeed * deltaTime;
+                if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) camera.Position += forward * velocity;
+                if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) camera.Position -= forward * velocity;
+                if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) camera.Position -= right * velocity;
+                if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) camera.Position += right * velocity;
+                if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) camera.Position += worldUp * velocity;
+                if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) camera.Position -= worldUp * velocity;
+            }
         }
         {
 			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0,0,0,0));

@@ -30,6 +30,7 @@ set(ENGINE_SRC
     engine/Character.cpp
     engine/InputSystem.cpp
     engine/PlayerController.cpp
+    engine/GameInputSystem.cpp
 )
 
 # Misc Sources
@@ -37,8 +38,13 @@ set(MISC_SRC
     misc/stb_image.h
 )
 
+# UI Sources
+set(UI_SRC
+    ui/SimpleUI.cpp
+)
+
 # Note: our main file is CalderaEngine.cpp
-add_executable(CalderaEngine CalderaEngine.cpp ${IMGUI_SRC} ${RENDERER_SRC} ${ENGINE_SRC} ${MISC_SRC})
+add_executable(CalderaEngine CalderaEngine.cpp ${IMGUI_SRC} ${RENDERER_SRC} ${ENGINE_SRC} ${MISC_SRC} ${UI_SRC})
 
 target_include_directories(CalderaEngine PRIVATE
     imgui

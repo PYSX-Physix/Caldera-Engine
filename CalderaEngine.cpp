@@ -13,8 +13,8 @@
 #include <sstream>
 #include <filesystem>
 #include <cstring>
-// engine and UI systems
 #include "engine/InputSystem.h"
+#include "engine/GameInputSystem.h"
 #include "engine/PlayerController.h"
 #include "engine/Character.h"
 #include "ui/SimpleUI.h"
@@ -65,8 +65,11 @@ int main() {
     float deltaTime = 0.0f;
 
     InputSystem inputSys(window);
+    // Game input uses the same window for now; it is a separate logical system so it can be
+    // attached/detached independently in the future when creating a separate play window.
+    GameInputSystem gameInput(window);
     Character playerChar;
-    PlayerController controller(&inputSys, &camera, &playerChar);
+    PlayerController controller(&inputSys, &gameInput, &camera, &playerChar);
 
     // load a texture for models (optional)
     Texture defaultTex;
@@ -78,6 +81,8 @@ int main() {
         std::string name;
         // mesh resource path
         std::string resource;
+    // simple material: diffuse texture path
+    struct Material { std::string DiffusePath; Texture* DiffuseTex = nullptr; } material;
         glm::vec3 position{0.0f};
         glm::vec3 rotation{0.0f};
         glm::vec3 scale{1.0f};
@@ -251,6 +256,39 @@ int main() {
                     if (ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen)) {
                         ImGui::ColorEdit3("Color", &so.light.Color.x);
                         ImGui::DragFloat("Intensity", &so.light.Intensity, 0.1f, 0.0f, 100.0f);
+                    }
+                } else if (so.type == SceneObject::MeshObj) {
+                    if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen)) {
+                        // show/edit diffuse texture path
+                        char pathBuf[512];
+                        strncpy(pathBuf, so.material.DiffusePath.c_str(), sizeof(pathBuf));
+                        pathBuf[sizeof(pathBuf)-1] = '\0';
+                        if (ImGui::InputText("Diffuse Path", pathBuf, sizeof(pathBuf))) {
+                            so.material.DiffusePath = std::string(pathBuf);
+                        }
+                        ImGui::SameLine();
+                        if (ImGui::Button("Load Texture")) {
+                            // load texture and assign to model/material
+                            if (!so.material.DiffusePath.empty()) {
+                                Texture* t = new Texture();
+                                if (t->LoadFromFile(so.material.DiffusePath)) {
+                                    so.material.DiffuseTex = t;
+                                } else {
+                                    delete t;
+                                    so.material.DiffuseTex = nullptr;
+                                }
+                                // if model is loaded, set its texture too
+                                Model* m = GetModel(so.resource);
+                                if (m) m->SetTexture(so.material.DiffuseTex);
+                            }
+                        }
+                        ImGui::Separator();
+                        if (so.material.DiffuseTex) {
+                            ImGui::Text("Preview:");
+                            SimpleUI::Image(so.material.DiffuseTex, 128.0f, 128.0f);
+                        } else {
+                            ImGui::Text("No diffuse texture assigned.");
+                        }
                     }
                 }
             } else {

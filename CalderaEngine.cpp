@@ -20,8 +20,6 @@
 #include "ui/SimpleUI.h"
 #include "renderer/Texture.h"
 
-using namespace std;
-
 int main() {
     // Initialize GLFW
     glfwInit();
@@ -39,7 +37,7 @@ int main() {
     // Initialize GLEW
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK) {
-        cerr << "Failed to initialize GLEW" << endl;
+        std::cerr << "Failed to initialize GLEW" << std::endl;
         return -1;
     }
 
@@ -59,7 +57,7 @@ int main() {
 
     // Setup renderer
     Renderer renderer;
-    if (!renderer.Init()) cerr << "Renderer init failed" << endl;
+    if (!renderer.Init()) std::cerr << "Renderer init failed" << std::endl;
     Camera camera(glm::vec3(0.0f, 0.0f, 5.0f));
 
     // -- input / -- timing state
@@ -76,40 +74,40 @@ int main() {
     // Scene objects (no lights by default)
     struct SceneObject {
         enum Type { MeshObj, LightObj } type;
-        string name;
+        std::string name;
         // mesh resource path
-        string resource;
+        std::string resource;
         // simple material: diffuse texture path
         glm::vec3 position{0.0f};
         glm::vec3 rotation{0.0f};
         glm::vec3 scale{1.0f};
-        struct Material { string DiffusePath; Texture* DiffuseTex = nullptr; } material;
+        struct Material { std::string DiffusePath; Texture* DiffuseTex = nullptr; } material;
         // light data
         Light light;
     };
 
-    vector<SceneObject> sceneObjects;
+    std::vector<SceneObject> sceneObjects;
     size_t selectedObject = (size_t)-1;
 
     // resource cache for models
-    map<string, Model> modelCache;
-    auto GetModel = [&](const string &path)->Model* {
+    std::map<std::string, Model> modelCache;
+    auto GetModel = [&](const std::string &path)->Model* {
         if (path.empty()) return nullptr;
         auto it = modelCache.find(path);
         if (it != modelCache.end()) return &it->second;
         Model m;
         if (m.LoadModel(path)) {
-            modelCache.emplace(path, move(m));
+            modelCache.emplace(path, std::move(m));
             return &modelCache.find(path)->second;
         }
-        cerr << "Failed to load model resource: " << path << endl;
+        std::cerr << "Failed to load model resource: " << path << std::endl;
         return nullptr;
     };
 
     // scene file helpers (simple line-based format)
-    auto SaveScene = [&](const string &filename){
-        filesystem::create_directories("scenes");
-        ofstream out("scenes/" + filename + ".scene");
+    auto SaveScene = [&](const std::string &filename){
+        std::filesystem::create_directories("scenes");
+        std::ofstream out("scenes/" + filename + ".scene");
             for (auto &o : sceneObjects) {
             if (o.type == SceneObject::MeshObj) {
                 out << "MESH|" << o.name << "|" << o.resource << "|"
@@ -127,37 +125,37 @@ int main() {
         out.close();
     };
 
-    auto LoadScene = [&](const string &filename){
+    auto LoadScene = [&](const std::string &filename){
         sceneObjects.clear();
-        ifstream in("scenes/" + filename + ".scene");
+        std::ifstream in("scenes/" + filename + ".scene");
         if (!in.is_open()) return false;
-        string line;
-        while (getline(in, line)) {
+        std::string line;
+        while (std::getline(in, line)) {
             if (line.empty()) continue;
-            stringstream ss(line);
-            string token;
-            getline(ss, token, '|');
+            std::stringstream ss(line);
+            std::string token;
+            std::getline(ss, token, '|');
             SceneObject o;
             if (token == "MESH") {
                 // If the type is a mesh then read mesh data
                 o.type = SceneObject::MeshObj;
-                getline(ss, o.name, '|');
-                getline(ss, o.resource, '|');
-                string pos, rot, scl;
-                getline(ss, pos, '|'); getline(ss, rot, '|'); getline(ss, scl, '|');
+                std::getline(ss, o.name, '|');
+                std::getline(ss, o.resource, '|');
+                std::string pos, rot, scl;
+                std::getline(ss, pos, '|'); std::getline(ss, rot, '|'); std::getline(ss, scl, '|');
                 sscanf(pos.c_str(), "%f,%f,%f", &o.position.x, &o.position.y, &o.position.z);
                 sscanf(rot.c_str(), "%f,%f,%f", &o.rotation.x, &o.rotation.y, &o.rotation.z);
                 sscanf(scl.c_str(), "%f,%f,%f", &o.scale.x, &o.scale.y, &o.scale.z);
-                getline(ss, o.material.DiffusePath, '|');
+                std::getline(ss, o.material.DiffusePath, '|');
             } else if (token == "LIGHT") {
                 // If the type is a light then read light data
                 o.type = SceneObject::LightObj;
-                getline(ss, o.name, '|');
-                string pos, col; getline(ss, pos, '|'); getline(ss, col, '|');
+                std::getline(ss, o.name, '|');
+                std::string pos, col; std::getline(ss, pos, '|'); std::getline(ss, col, '|');
                 sscanf(pos.c_str(), "%f,%f,%f", &o.position.x, &o.position.y, &o.position.z);
                 sscanf(col.c_str(), "%f,%f,%f", &o.light.Color.r, &o.light.Color.g, &o.light.Color.b);
-                string intensity; getline(ss, intensity, '|');
-                o.light.Intensity = stof(intensity);
+                std::string intensity; std::getline(ss, intensity, '|');
+                o.light.Intensity = std::stof(intensity);
             }
             sceneObjects.push_back(o);
         }
@@ -234,11 +232,11 @@ int main() {
                 SceneObject o;
                 if (addType == 0) {
                     o.type = SceneObject::MeshObj;
-                    o.name = string("Mesh_") + to_string(sceneObjects.size());
-                    o.resource = string(newMeshPath);
+                    o.name = std::string("Mesh_") + std::to_string(sceneObjects.size());
+                    o.resource = std::string(newMeshPath);
                 } else {
                     o.type = SceneObject::LightObj;
-                    o.name = string("Light_") + to_string(sceneObjects.size());
+                    o.name = std::string("Light_") + std::to_string(sceneObjects.size());
                     o.light.Color = glm::vec3(1.0f);
                     o.light.Intensity = 1.0f;
                 }
@@ -267,7 +265,7 @@ int main() {
                         strncpy(pathBuf, so.material.DiffusePath.c_str(), sizeof(pathBuf));
                         pathBuf[sizeof(pathBuf)-1] = '\0';
                         if (ImGui::InputText("Diffuse Path", pathBuf, sizeof(pathBuf))) {
-                            so.material.DiffusePath = string(pathBuf);
+                            so.material.DiffusePath = std::string(pathBuf);
                         }
                         if (ImGui::Button("Load Texture")) {
                             // load texture and assign to model/material
@@ -325,7 +323,7 @@ int main() {
     //lights[0].Position = glm::vec3(cos(t) * 3.0f, 2.0f, sin(t) * 3.0f);
 
     // build lights list from sceneObjects
-    vector<Light> lightsList;
+    std::vector<Light> lightsList;
     for (auto &o : sceneObjects) if (o.type == SceneObject::LightObj) {
         Light L = o.light;
         L.Position = o.position;

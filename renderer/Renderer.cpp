@@ -1,6 +1,7 @@
 #include "Renderer.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
+#include "Texture.h"
 
 static const char* vertexSrc = R"GLSL(
 #version 150
@@ -29,8 +30,9 @@ const int MAX_LIGHTS = 8;
 in vec3 FragPos;
 in vec3 Normal;
 out vec4 FragColor;
-
 uniform vec3 viewPos;
+uniform sampler2D diffuseTex;
+uniform int useTexture;
 uniform int numLights;
 uniform Light lights[MAX_LIGHTS];
 
@@ -39,6 +41,13 @@ void main() {
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 result = vec3(0.0);
     vec3 base = vec3(0.8, 0.8, 0.8);
+    if (useTexture == 1) {
+        // sample a small 2D texture using normalized normal as uv fallback (not ideal)
+        vec2 uv = vec2(0.0);
+        // if real texcoords existed we'd pass them; sample center
+        vec4 tcol = texture(diffuseTex, vec2(0.5,0.5));
+        base = tcol.rgb;
+    }
     for (int i = 0; i < numLights; ++i) {
         vec3 lightDir = normalize(lights[i].pos - FragPos);
         float diff = max(dot(norm, lightDir), 0.0);
@@ -86,6 +95,14 @@ void Renderer::Render(const Camera& cam, const Model& model, const std::vector<L
         glm::mat4 meshModel = modelMat;
         if (i < model.meshTransforms.size()) meshModel = modelMat * model.meshTransforms[i];
         shader->SetMat4("model", meshModel);
+        // bind model texture if provided
+        if (model.GetTexture()) {
+            model.GetTexture()->Bind(0);
+            shader->SetInt("diffuseTex", 0);
+            shader->SetInt("useTexture", 1);
+        } else {
+            shader->SetInt("useTexture", 0);
+        }
         model.meshes[i].Draw();
     }
 }

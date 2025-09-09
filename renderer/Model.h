@@ -3,6 +3,7 @@
 #include <string>
 #include "Mesh.h"
 #include <glm/glm.hpp>
+#include "Texture.h"
 
 class Model {
 public:
@@ -15,6 +16,9 @@ public:
     size_t MeshCount() const { return meshes.size(); }
     glm::vec3 GetMeshPosition(size_t i) const;
     void SetMeshPosition(size_t i, const glm::vec3 &pos);
+    void SetTexture(Texture* t) { tex = t; }
+    Texture* GetTexture() const { return tex; }
 private:
     Mesh ProcessMesh(const void* mesh, const void* scene);
+    Texture* tex = nullptr;
 };

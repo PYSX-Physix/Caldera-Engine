@@ -13,9 +13,15 @@
 #include <sstream>
 #include <filesystem>
 #include <cstring>
+// engine and UI systems
+#include "engine/InputSystem.h"
+#include "engine/PlayerController.h"
+#include "engine/Character.h"
+#include "ui/SimpleUI.h"
+#include "renderer/Texture.h"
 
 int main() {
-    // 1. Initialize GLFW
+    // Initialize GLFW
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     // MacOS for some reason likes 3.2 but not other versions
@@ -28,7 +34,7 @@ int main() {
     GLFWwindow* window = glfwCreateWindow(1280, 720, "Caldera Engine", NULL, NULL);
     glfwMakeContextCurrent(window);
 
-    // 2. Initialize GLEW
+    // Initialize GLEW
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK) {
         std::cerr << "Failed to initialize GLEW" << std::endl;
@@ -36,16 +42,16 @@ int main() {
     }
 
 
-    // 2. Setup Dear ImGui context
+    // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable;
 
-    // 3. Setup ImGui style
+    // Setup ImGui style
     ImGui::StyleColorsDark();
 
-    // 4. Setup Platform/Renderer bindings
+    // Setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 150"); // macOS-friendly GLSL version
 
@@ -57,10 +63,14 @@ int main() {
     // -- input / -- timing state
     float lastFrameTime = 0.0f;
     float deltaTime = 0.0f;
-    bool firstMouse = true;
-    double lastMouseX = 0.0, lastMouseY = 0.0;
-    bool mouseCaptured = false;
-    const float movementSpeed = 3.0f;
+
+    InputSystem inputSys(window);
+    Character playerChar;
+    PlayerController controller(&inputSys, &camera, &playerChar);
+
+    // load a texture for models (optional)
+    Texture defaultTex;
+    defaultTex.LoadFromFile("assets/texture.png");
 
     // Scene objects (no lights by default)
     struct SceneObject {
@@ -125,6 +135,7 @@ int main() {
             std::getline(ss, token, '|');
             SceneObject o;
             if (token == "MESH") {
+                // If the type is a mesh then read mesh data
                 o.type = SceneObject::MeshObj;
                 std::getline(ss, o.name, '|');
                 std::getline(ss, o.resource, '|');
@@ -134,6 +145,7 @@ int main() {
                 sscanf(rot.c_str(), "%f,%f,%f", &o.rotation.x, &o.rotation.y, &o.rotation.z);
                 sscanf(scl.c_str(), "%f,%f,%f", &o.scale.x, &o.scale.y, &o.scale.z);
             } else if (token == "LIGHT") {
+                // If the type is a light then read light data
                 o.type = SceneObject::LightObj;
                 std::getline(ss, o.name, '|');
                 std::string pos, col; std::getline(ss, pos, '|'); std::getline(ss, col, '|');
@@ -180,43 +192,10 @@ int main() {
             double currentFrame = glfwGetTime();
             deltaTime = (float)(currentFrame - lastFrameTime);
             lastFrameTime = (float)currentFrame;
-            bool wantLook = (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) && !io.WantCaptureMouse;
-            if (wantLook && !mouseCaptured) {
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                mouseCaptured = true;
-                firstMouse = true;
-            } else if (!wantLook && mouseCaptured) {
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-                mouseCaptured = false;
-            }
 
-            if (mouseCaptured) {
-                double xpos, ypos;
-                glfwGetCursorPos(window, &xpos, &ypos);
-                if (firstMouse) {
-                    lastMouseX = xpos;
-                    lastMouseY = ypos;
-                    firstMouse = false;
-                }
-                float xoffset = (float)(xpos - lastMouseX);
-                float yoffset = (float)(lastMouseY - ypos);
-                lastMouseX = xpos;
-                lastMouseY = ypos;
-                camera.ProcessMouseMovement(xoffset * -1, yoffset);
-            }
-
-            if (!io.WantCaptureKeyboard) {
-                glm::vec3 forward = glm::normalize(camera.Front);
-                glm::vec3 worldUp(0.0f, 1.0f, 0.0f);
-                glm::vec3 right = glm::normalize(glm::cross(forward, worldUp));
-                float velocity = movementSpeed * deltaTime;
-                if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) camera.Position += forward * velocity;
-                if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) camera.Position -= forward * velocity;
-                if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) camera.Position -= right * velocity;
-                if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) camera.Position += right * velocity;
-                if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) camera.Position += worldUp * velocity;
-                if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) camera.Position -= worldUp * velocity;
-            }
+            // update engine input and controller
+            inputSys.Update();
+            controller.Update(deltaTime);
         }
         {
 			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0,0,0,0));

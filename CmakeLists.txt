@@ -22,15 +22,31 @@ set(RENDERER_SRC
     renderer/Mesh.cpp
     renderer/Model.cpp
     renderer/Renderer.cpp
+    renderer/Texture.cpp
+)
+
+# Engine Sources
+set(ENGINE_SRC
+    engine/Character.cpp
+    engine/InputSystem.cpp
+    engine/PlayerController.cpp
+)
+
+# Misc Sources
+set(MISC_SRC
+    misc/stb_image.h
 )
 
 # Note: our main file is CalderaEngine.cpp
-add_executable(CalderaEngine CalderaEngine.cpp ${IMGUI_SRC} ${RENDERER_SRC})
+add_executable(CalderaEngine CalderaEngine.cpp ${IMGUI_SRC} ${RENDERER_SRC} ${ENGINE_SRC} ${MISC_SRC})
 
 target_include_directories(CalderaEngine PRIVATE
     imgui
     imgui/backends
     renderer
+    engine
+    ui
+    misc
 )
 
 target_link_libraries(CalderaEngine PRIVATE

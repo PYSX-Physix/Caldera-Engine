@@ -208,7 +208,7 @@ int main() {
         {
 			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0,0,0,0));
 			ImGuiID maindock_id = ImGui::GetID("MainDock");
-			ImGui::DockSpaceOverViewport(maindock_id, ImGui::GetMainViewport());
+			ImGui::DockSpaceOverViewport(maindock_id, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
             ImGui::PopStyleColor(1);
         }
 

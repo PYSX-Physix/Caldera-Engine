@@ -31,6 +31,7 @@ set(ENGINE_SRC
     engine/InputSystem.cpp
     engine/PlayerController.cpp
     engine/GameInputSystem.cpp
+    engine/Audio.cpp
 )
 
 # Misc Sources

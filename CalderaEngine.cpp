@@ -1,3 +1,82 @@
+// TODO: Possibly add renaming assets in the world outliner or properties section
+// TODO: Add basic terrain generation from heightmap
+// TODO: Add deleting objects from scene
+// TODO: Add Undo and Redo
+// TODO: Add UI Designer or use external tool that the engine can read from
+// TODO: Add audio system
+// TODO: Add physics system
+// TODO: Add option for adding sounds to scene
+// TODO: Add dynamic particle system
+// TODO: Add animation support for models
+// TODO: Add basic skybox support
+// TODO: Add more complex material support (normal maps, specular maps, etc.)
+// TODO: Use a seperate window for play-in-editor mode (Allows for debuging and better separation of editor and game input)
+// TODO: Add gizmos for moving, rotating, and scaling a selected object in the scene view
+// TODO: Possibly create project system with the .vproject file extention
+// TODO: Create custom function for C++ 
+// TODO: Create content browser for importing assets, viewing them, and dragging them into the scene, and deleting them
+// TODO: Add system for game starting level and editor starting level with both being different startup points
+// TODO: Allow making children classes of a specific asset
+// TODO: Improve the world outliner to allow for better organization of scene objects via grouping or parenting
+// TODO: Improve the world outliner to allow for right clicking to edit, duplicate, or delete objects
+// TODO: Implement a search function for the world outliner
+// TODO: Add better error handling and reporting
+// TODO: Create a build system for building the game into an executable
+// TODO: Create plugin system for adding functionality to the editor, engine, or game
+// TODO: Add a way to load and save scenes
+// TODO: Add a loading screen when starting the game or loading a scene (This can be a plugin)
+// TODO: Add a way to change the keybindings
+// TODO: Create game settings system that is seperate from the engine settings (Allow for custom settings to written in a child class)
+// TODO: Add a way to change the editor settings (Window size, theme, keybindings, etc.)
+// TODO: Add a way to dynamically set UI scale based on DPI or user preference
+// TODO: Add localization for games in different countries
+// TODO: Add a way to profile the game and editor for performance issues
+// TODO: Add a way to view logs and errors in the editor
+// TODO: Create a way to set ui elements like text, images, buttons, etc. in C++ or the editor
+// TODO: Add a way to preview UI elements in the editor
+// TODO: Set a way to save and load UI layouts
+// TODO: Create a way to animate UI elements
+// TODO: Create system to set UI textures, fonts, colors, etc.
+// TODO: Add button events for UI elements
+// TODO: Create a way to set UI element positions and sizes in the editor or in external tools
+// TODO: Add UI console support in future for different input types
+// TODO: Create trigger systems for when something is suppoesed to happen in the game (This can be a plugin)
+// TODO: Add crash reporter for when the engine or game crashes
+// TODO: Add uninstall helper for game launchers
+// TODO: Add sun and moon lighting system for day/night cycles (This can be a plugin, the sun and moon assets cannot be apart of the plugin)
+// TODO: Create a point and click system for moving the character around the scene (This can be a plugin)
+// TODO: Make the model and texture system use reletative paths instead of whole paths
+// TODO: Add animation support
+// TODO: Add LOD support for models
+// TODO: Add a way to view and edit materials in the editor
+// TODO: Add a way to view and edit shaders in the editor (Maybe post processing system?)
+// TODO: Add a way to view textures in the editor and to filter the RGBA channels
+// TODO: Add a way to view models in the editor and to filter the vertices, uvs, normals, etc.
+// TODO: Add a way to view animations in the editor and to filter the bones, keyframes, etc.
+// TODO: Add a way to view sounds in the editor like their sign waves and also adjust volume, pitch, etc.
+// TODO: Create sound classes to filter what can be heard and not heard in game settings
+// TODO: Allow meshes to use physics if needed (this can be changed in the properties section of the instanced mesh)
+// TODO: Create patching solution for in case of hotfixes or small updates
+// TODO: Use STB image for texture loading and saving
+// TODO: Use SimpleUI for in-game UI and interface rendering
+// TODO: Add a way to change the field of view of the camera
+// TODO: Add a way to change the speed of the camera
+// TODO: Create movement system for player and allow the player speed to be adjusted in code or in the editor
+// TODO: Create a way to set the player character's position and rotation
+// TODO: Create game start item for the player to start in specific levels/scenes
+// TODO: Create navigation volume for AI systems
+// TODO: Craate AI systems and allow creation of AI through C++
+// TODO: Create a way to view and edit AI in the editor
+// TODO: Make sure all packaged assets are stored in either .PAK files or unviewable files so game leaking isn't possible
+// TODO: Create anti-tamper solution for anti-cheats
+// TODO: Create anti-piracy solution for games
+// TODO: Add networking/multiplayer support
+// TODO: Add a way to view and edit networking/multiplayer in the editor
+// TODO: Add a way to change the near and far plane of the camera
+// TODO: Use C++ for coding systems (Some C++ we will built for engine and some items will be raw C++ code)
+// TODO: Add water systems (This will be a plugin)
+// TODO: Add volumetric fog support (This will be a plugin)
+// TODO: Create C++ syntax to avoid illegal C++ code
 #include "imgui.h"
 #include "imconfig.h"
 #include "imgui_impl_glfw.h"
@@ -74,7 +153,7 @@ int main() {
 
     // Scene objects (no lights by default)
     struct SceneObject {
-        enum Type { MeshObj, LightObj } type;
+        enum Type { MeshObj, LightObj, LandscapeObj } type;
         std::string name;
         // mesh resource path
         std::string resource;
@@ -85,6 +164,8 @@ int main() {
         struct Material { std::string DiffusePath; Texture* DiffuseTex = nullptr; } material;
         // light data
         Light light;
+        // landscape data
+        struct Terrain { Texture* Heightmap = nullptr; Texture* Material = nullptr; } terrain;
     };
 
     std::vector<SceneObject> sceneObjects;
@@ -115,11 +196,15 @@ int main() {
                     << o.rotation.x << "," << o.rotation.y << "," << o.rotation.z << "|"
                     << o.scale.x << "," << o.scale.y << "," << o.scale.z << "|" 
                     << o.material.DiffusePath << "\n";
-            } else {
+            } else if (o.type == SceneObject::LightObj) {
                 out << "LIGHT|" << o.name << "|"
                     << o.position.x << "," << o.position.y << "," << o.position.z << "|"
                     << o.light.Color.r << "," << o.light.Color.g << "," << o.light.Color.b << "|"
                     << o.light.Intensity << "\n";
+            } else if (o.type == SceneObject::LandscapeObj) {
+                out << "LANDSCAPE|" << o.name << "|"
+                    << o.position.x << "," << o.position.y << "," << o.position.z << "|"
+                    << o.terrain.Heightmap << "|" << o.terrain.Material << "\n";
             }
         }
         out.close();
@@ -254,7 +339,7 @@ int main() {
             ImGui::PopStyleColor(1);
         }
 
-        // 6. Properties / Object chooser
+        // Properties / Object chooser
         {
             ImGui::Begin("Properties", nullptr, ImGuiWindowFlags_DockNodeHost);
             ImGui::Text("Scene");
@@ -268,9 +353,10 @@ int main() {
 
             // Add object chooser
             ImGui::Text("Add Object");
-            static int addType = 0; // 0 = Mesh, 1 = Light
+            static int addType = 0; // 0 = Mesh, 1 = Light 2 = Landscape
             ImGui::RadioButton("Mesh", &addType, 0); ImGui::SameLine();
-            ImGui::RadioButton("Light", &addType, 1);
+            ImGui::RadioButton("Light", &addType, 1); ImGui::SameLine();
+            ImGui::RadioButton("Landscape", &addType, 2);
             ImGui::InputText("Mesh path", newMeshPath, sizeof(newMeshPath));
             if (ImGui::Button("Add Object")) {
                 SceneObject o;
@@ -278,12 +364,18 @@ int main() {
                     o.type = SceneObject::MeshObj;
                     o.name = std::string("Mesh_") + std::to_string(sceneObjects.size());
                     o.resource = std::string(newMeshPath);
-                } else {
+                } else if (addType == 1) {
                     o.type = SceneObject::LightObj;
                     o.name = std::string("Light_") + std::to_string(sceneObjects.size());
                     o.light.Color = glm::vec3(1.0f);
                     o.light.Intensity = 1.0f;
+                } else if (addType == 2) {
+                    o.type = SceneObject::LandscapeObj;
+                    o.name = std::string("Landscape") + std::to_string(sceneObjects.size());
+                    o.terrain.Heightmap = nullptr; // Placeholder for heightmap
+                    o.terrain.Material = nullptr; // Placeholder for terrain material
                 }
+                // TODO: Add landscape option for terrain systems
                 sceneObjects.push_back(o);
             }
             ImGui::Separator();
@@ -341,7 +433,19 @@ int main() {
 
             ImGui::End();
         }
-
+        {
+            // Content Drawer
+            ImGui::Begin("Content Drawer", nullptr, ImGuiWindowFlags_DockNodeHost);
+            ImGui::Text("Assets in assets/ directory:");
+            ImGui::Separator();
+            for (const auto &entry : std::filesystem::directory_iterator("assets")) {
+                if (entry.is_regular_file()) {
+                    const auto &path = entry.path();
+                    ImGui::Text("%s", path.filename().string().c_str());
+                }
+            }
+            ImGui::End();
+        }
         {
             ImGui::Begin("World Outliner", nullptr, ImGuiWindowFlags_DockNodeHost);
             if (ImGui::Button("Clear")) { sceneObjects.clear(); }

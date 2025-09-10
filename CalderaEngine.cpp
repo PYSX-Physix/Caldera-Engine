@@ -104,7 +104,7 @@ int main() {
         return nullptr;
     };
 
-    // scene file helpers (simple line-based format)
+    // scene file helpers
     auto SaveScene = [&](const std::string &filename){
         std::filesystem::create_directories("scenes");
         std::ofstream out("scenes/" + filename + ".scene");

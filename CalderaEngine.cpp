@@ -1,4 +1,3 @@
-// TODO: Possibly add renaming assets in the world outliner or properties section
 // TODO: Add basic terrain generation from heightmap
 // TODO: Add deleting objects from scene
 // TODO: Add Undo and Redo
@@ -125,7 +124,7 @@ int main() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable ;
 
     // Setup ImGui style
     ImGui::StyleColorsDark();
@@ -161,11 +160,11 @@ int main() {
         glm::vec3 position{0.0f};
         glm::vec3 rotation{0.0f};
         glm::vec3 scale{1.0f};
-        struct Material { std::string DiffusePath; Texture* DiffuseTex = nullptr; } material;
+        struct Material { std::string DiffusePath; Texture* DiffuseTex = nullptr; std::string NormalPath; Texture* NormalTex = nullptr; } material;
         // light data
         Light light;
         // landscape data
-        struct Terrain { Texture* Heightmap = nullptr; Texture* Material = nullptr; } terrain;
+        struct Terrain { std::string HeightmapPath; Texture* Heightmap = nullptr; Texture* Material = nullptr; std::string MaterialPath; } terrain;
     };
 
     std::vector<SceneObject> sceneObjects;
@@ -194,8 +193,8 @@ int main() {
                 out << "MESH|" << o.name << "|" << o.resource << "|"
                     << o.position.x << "," << o.position.y << "," << o.position.z << "|"
                     << o.rotation.x << "," << o.rotation.y << "," << o.rotation.z << "|"
-                    << o.scale.x << "," << o.scale.y << "," << o.scale.z << "|" 
-                    << o.material.DiffusePath << "\n";
+                    << o.scale.x << "," << o.scale.y << "," << o.scale.z << "|"
+                    << o.material.DiffusePath << "|" << o.material.NormalPath << "\n";
             } else if (o.type == SceneObject::LightObj) {
                 out << "LIGHT|" << o.name << "|"
                     << o.position.x << "," << o.position.y << "," << o.position.z << "|"
@@ -231,6 +230,7 @@ int main() {
                 sscanf(pos.c_str(), "%f,%f,%f", &o.position.x, &o.position.y, &o.position.z);
                 sscanf(rot.c_str(), "%f,%f,%f", &o.rotation.x, &o.rotation.y, &o.rotation.z);
                 sscanf(scl.c_str(), "%f,%f,%f", &o.scale.x, &o.scale.y, &o.scale.z);
+                // Set's the material when loading the scene
                 std::getline(ss, o.material.DiffusePath, '|');
                 if (!o.material.DiffusePath.empty()) {
                     Texture* tex = new Texture();
@@ -243,6 +243,18 @@ int main() {
                         o.material.DiffuseTex = nullptr;
                     }
                 }
+                std::getline(ss, o.material.NormalPath, '|');
+                if (!o.material.NormalPath.empty()) {
+                    Texture* tex = new Texture();
+                    if (tex->LoadFromFile(o.material.NormalPath)) {
+                        o.material.NormalTex = tex;
+                        Model* m = GetModel(o.resource);
+                        if (m) m->SetNormalMap(o.material.NormalTex);
+                    } else {
+                        delete tex;
+                        o.material.NormalTex = nullptr;
+                    }
+                }
             } else if (token == "LIGHT") {
                 // If the type is a light then read light data
                 o.type = SceneObject::LightObj;
@@ -252,6 +264,25 @@ int main() {
                 sscanf(col.c_str(), "%f,%f,%f", &o.light.Color.r, &o.light.Color.g, &o.light.Color.b);
                 std::string intensity; std::getline(ss, intensity, '|');
                 o.light.Intensity = std::stof(intensity);
+            } else if (token == "LANDSCAPE") {
+                o.type = SceneObject::LandscapeObj;
+                std::getline(ss, o.name, '|');
+                std::string pos;
+                std::getline(ss, pos, '|');
+                sscanf(pos.c_str(), "%f,%f,%f", &o.position.x, &o.position.y, &o.position.z);
+
+                // TODO: This needs to deform the landscape on load
+                std::getline(ss, o.terrain.HeightmapPath, '|');
+                std::getline(ss, o.terrain.MaterialPath, '|');
+                if (!o.terrain.MaterialPath.empty()) {
+                    Texture* tex = new Texture();
+                    if (tex->LoadFromFile(o.terrain.MaterialPath)) {
+                        o.terrain.Material = tex;
+                    } else {
+                        delete tex;
+                        o.terrain.Material = nullptr;
+                    }
+                }
             }
             sceneObjects.push_back(o);
         }
@@ -261,14 +292,12 @@ int main() {
 
     // UI helpers
     char sceneName[128] = "default";
-    char newMeshPath[256] = "assets/teapot.fbx";
+    char newMeshPath[256] = "assets/teapot/teapot.fbx";
     char texturePath[256] = "assets/texture.png";
     // selection & transforms
     glm::vec3 modelPos(0.0f);
     glm::vec3 modelRot(0.0f);
     glm::vec3 modelScale(1.0f);
-    // load material
-
 
     // framebuffer resize callback
     glfwSetFramebufferSizeCallback(window, [](GLFWwindow* w, int width, int height){
@@ -333,10 +362,8 @@ int main() {
             }
         }
         {
-			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0,0,0,0));
 			ImGuiID maindock_id = ImGui::GetID("MainDock");
 			ImGui::DockSpaceOverViewport(maindock_id, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
-            ImGui::PopStyleColor(1);
         }
 
         // Properties / Object chooser
@@ -352,11 +379,9 @@ int main() {
             ImGui::Separator();
 
             // Add object chooser
-            ImGui::Text("Add Object");
-            static int addType = 0; // 0 = Mesh, 1 = Light 2 = Landscape
-            ImGui::RadioButton("Mesh", &addType, 0); ImGui::SameLine();
-            ImGui::RadioButton("Light", &addType, 1); ImGui::SameLine();
-            ImGui::RadioButton("Landscape", &addType, 2);
+            static int addType = 0; // 0 = Mesh, 1 = Light, 2 = Landscape
+            static const char* addTypeNames[] = { "Mesh", "Light", "Landscape" };
+            ImGui::Combo("Object Mode", &addType, addTypeNames, IM_ARRAYSIZE(addTypeNames));
             ImGui::InputText("Mesh path", newMeshPath, sizeof(newMeshPath));
             if (ImGui::Button("Add Object")) {
                 SceneObject o;
@@ -372,14 +397,11 @@ int main() {
                 } else if (addType == 2) {
                     o.type = SceneObject::LandscapeObj;
                     o.name = std::string("Landscape") + std::to_string(sceneObjects.size());
-                    o.terrain.Heightmap = nullptr; // Placeholder for heightmap
-                    o.terrain.Material = nullptr; // Placeholder for terrain material
                 }
-                // TODO: Add landscape option for terrain systems
                 sceneObjects.push_back(o);
             }
             ImGui::Separator();
-
+            ImGuiSliderFlags sliderFlags = ImGuiSliderFlags_AlwaysClamp;
             // Selected object properties
             if (selectedObject < sceneObjects.size()) {
                 SceneObject &so = sceneObjects[selectedObject];
@@ -395,6 +417,88 @@ int main() {
                         ImGui::DragFloat("Intensity", &so.light.Intensity, 0.1f, 0.0f, 100.0f);
                     }
                 } else if (so.type == SceneObject::MeshObj) {
+                    if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen)) {
+                        // show/edit diffuse texture path
+                        char pathBuf[512];
+                        char nPathBuf[512];
+
+                        strncpy(pathBuf, so.material.DiffusePath.c_str(), sizeof(pathBuf));
+                        strncpy(nPathBuf, so.material.NormalPath.c_str(), sizeof(nPathBuf));
+
+                        pathBuf[sizeof(pathBuf)-1] = '\0';
+                        nPathBuf[sizeof(nPathBuf)-1] = '\0';
+
+                        if (ImGui::InputText("Diffuse Path", pathBuf, sizeof(pathBuf))) {
+                            so.material.DiffusePath = std::string(pathBuf);
+                        }
+                        if (ImGui::InputText("Normal Path", nPathBuf, sizeof(nPathBuf))) {
+                            so.material.NormalPath = std::string(nPathBuf);
+                        }
+                        if (ImGui::Button("Load Textures")) {
+                            // load texture and assign to model/material
+                            if (!so.material.DiffusePath.empty()) {
+                                Texture* t = new Texture();
+                                if (t->LoadFromFile(so.material.DiffusePath)) {
+                                    so.material.DiffuseTex = t;
+                                } else {
+                                    delete t;
+                                    so.material.DiffuseTex = nullptr;
+                                }
+                                // if model is loaded, set its texture too
+                                Model* m = GetModel(so.resource);
+                                if (m) m->SetTexture(so.material.DiffuseTex);
+                            }
+                            // Load the normal mapping
+                            if (!so.material.NormalPath.empty()) {
+                                Texture* t = new Texture();
+                                if (t->LoadFromFile(so.material.NormalPath)) {
+                                    so.material.NormalTex = t;
+                                } else {
+                                    delete t;
+                                    so.material.NormalTex = nullptr;
+                                }
+                                // if model is loaded, set its normal map too
+                                Model* m = GetModel(so.resource);
+                                if (m) m->SetNormalMap(so.material.NormalTex);
+                            }
+                        }
+                        ImGui::Separator();
+                        if (so.material.DiffuseTex) {
+                            ImGui::Text("Preview:");
+                            SimpleUI::Image(so.material.DiffuseTex, 64.0f, 64.0f);
+                            SimpleUI::Image(so.material.NormalTex, 64.0f, 64.0f);
+                        } else {
+                            ImGui::Text("No diffuse texture assigned.");
+                            ImGui::Text("No normal map assigned.");
+                        }
+                    }
+                } else if (so.type == SceneObject::LandscapeObj) {
+                    if (ImGui::CollapsingHeader("Terrain", ImGuiTreeNodeFlags_DefaultOpen)) {
+                        char pathBuf[512];
+                        strncpy(pathBuf, so.terrain.HeightmapPath.c_str(), sizeof(pathBuf));
+                        pathBuf[sizeof(pathBuf)-1] = '\0';
+                        if (ImGui::InputText("Heightmap Path", pathBuf, sizeof(pathBuf))) {
+                            so.terrain.HeightmapPath = std::string(pathBuf);
+                        }
+                        if (ImGui::Button("Load Heightmap")) {
+                            if (!so.terrain.HeightmapPath.empty()) {
+                                Texture* t = new Texture();
+                                if (t->LoadFromFile(so.terrain.HeightmapPath)) {
+                                    so.terrain.Heightmap = t;
+                                } else {
+                                    delete t;
+                                    so.terrain.Heightmap = nullptr;
+                                }
+                            }
+                        }
+                        if (so.terrain.Heightmap) {
+                            ImGui::Text("Preview:");
+                            SimpleUI::Image(so.terrain.Heightmap, 64.0f, 64.0f);
+                        } else {
+                            ImGui::Text("No heightmap assigned.");
+                        }
+                    }
+
                     if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen)) {
                         // show/edit diffuse texture path
                         char pathBuf[512];
@@ -421,7 +525,7 @@ int main() {
                         ImGui::Separator();
                         if (so.material.DiffuseTex) {
                             ImGui::Text("Preview:");
-                            SimpleUI::Image(so.material.DiffuseTex, 128.0f, 128.0f);
+                            SimpleUI::Image(so.material.DiffuseTex, 64.0f, 64.0f);
                         } else {
                             ImGui::Text("No diffuse texture assigned.");
                         }
@@ -446,7 +550,13 @@ int main() {
             }
             ImGui::End();
         }
+
         {
+            // TODO: Possibly add renaming assets in the world outliner or properties section
+            static bool openRenameModal = false;
+            static char renameBuffer[128] = "";
+            static size_t renameTargetIndex = (size_t)-1;
+
             ImGui::Begin("World Outliner", nullptr, ImGuiWindowFlags_DockNodeHost);
             if (ImGui::Button("Clear")) { sceneObjects.clear(); }
             ImGui::SameLine();
@@ -455,15 +565,63 @@ int main() {
             for (size_t i = 0; i < sceneObjects.size(); ++i) {
                 ImGui::PushID((int)i);
                 bool isSelected = (selectedObject == i);
-                if (ImGui::Selectable(sceneObjects[i].name.c_str(), isSelected)) selectedObject = i;
+                if (ImGui::Selectable(sceneObjects[i].name.c_str(), isSelected)) {
+                    selectedObject = i;
+                }
+
+                if (ImGui::BeginPopupContextItem()) {
+                    if (ImGui::MenuItem("Rename")) {
+                        // Rename logic...
+                    }
+
+                    if (ImGui::MenuItem("Delete")) {
+                        sceneObjects.erase(sceneObjects.begin() + i);
+                        if (selectedObject == i || selectedObject >= sceneObjects.size()) {
+                            selectedObject = (size_t)-1;
+                        }
+                        ImGui::EndPopup();   // Close popup before breaking
+                        ImGui::PopID();      // Pop ID before breaking
+                        break;               // Exit loop to avoid invalid access
+                    }
+
+                    ImGui::EndPopup();
+                }
+
                 ImGui::PopID();
+            }
+
+            if (openRenameModal) {
+                ImGui::OpenPopup("Rename Object");
+                openRenameModal = false;
+            }
+
+            if (ImGui::BeginPopupModal("Rename Object", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+                ImGui::Text("Enter new name:");
+                ImGui::InputText("##RenameInput", renameBuffer, IM_ARRAYSIZE(renameBuffer));
+
+                ImGui::Spacing();
+                if (ImGui::Button("OK", ImVec2(120, 0))) {
+                    if (renameTargetIndex < sceneObjects.size()) {
+                        sceneObjects[renameTargetIndex].name = std::string(renameBuffer);
+                    }
+                    renameTargetIndex = (size_t)-1;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+                    renameTargetIndex = (size_t)-1;
+                    ImGui::CloseCurrentPopup();
+                }
+
+                ImGui::EndPopup();
             }
             ImGui::End();
         }
+        
         // Rendering
         ImGui::Render();
     glEnable(GL_DEPTH_TEST);
-    glClearColor(0.0f, 0.00f, 0.00f, 0.00f);
+    glClearColor(0.0f, 0.00f, 0.00f, 0.50f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // animate light slowly (if you want)

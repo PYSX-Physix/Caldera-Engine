@@ -3,64 +3,96 @@
 #include <iostream>
 #include "Texture.h"
 
+// Vertex shader: transforms position, normal, and passes UVs
 static const char* vertexSrc = R"GLSL(
 #version 150
+
 in vec3 aPos;
 in vec3 aNormal;
 in vec2 aTex;
 
-out vec3 FragPos;
-out vec3 Normal;
+out vec3 fragPosition;
+out vec3 fragNormal;
+out vec2 fragUV;
 
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
 void main() {
-    FragPos = vec3(model * vec4(aPos, 1.0));
-    Normal = mat3(transpose(inverse(model))) * aNormal;
-    gl_Position = projection * view * vec4(FragPos, 1.0);
+    fragPosition = vec3(model * vec4(aPos, 1.0));
+    fragNormal = mat3(transpose(inverse(model))) * aNormal;
+    fragUV = aTex;
+
+    gl_Position = projection * view * vec4(fragPosition, 1.0);
 }
 )GLSL";
 
+// Fragment shader: applies lighting with diffuse, roughness, and metallic maps
 static const char* fragmentSrc = R"GLSL(
 #version 150
-struct Light { vec3 pos; vec3 color; float intensity; };
+
+struct Light {
+    vec3 pos;
+    vec3 color;
+    float intensity;
+};
+
 const int MAX_LIGHTS = 8;
-in vec3 FragPos;
-in vec3 Normal;
+
+in vec3 fragPosition;
+in vec3 fragNormal;
+in vec2 fragUV;
+
 out vec4 FragColor;
+
 uniform vec3 viewPos;
 uniform sampler2D diffuseTex;
+uniform sampler2D roughnessMap;
+uniform sampler2D metallicMap;
 uniform int useTexture;
 uniform int numLights;
 uniform Light lights[MAX_LIGHTS];
 
 void main() {
-    vec3 norm = normalize(Normal);
-    vec3 viewDir = normalize(viewPos - FragPos);
-    vec3 result = vec3(0.0);
-    vec3 base = vec3(0.8, 0.8, 0.8);
+    vec3 normal = normalize(fragNormal);
+    vec3 viewDir = normalize(viewPos - fragPosition);
+    vec3 finalColor = vec3(0.0);
+
+    // Sample base color
+    vec3 baseColor = vec3(0.8);
     if (useTexture == 1) {
-        // sample a small 2D texture using normalized normal as uv fallback (not ideal)
-        vec2 uv = vec2(0.0);
-        // if real texcoords existed we'd pass them; sample center
-        vec4 tcol = texture(diffuseTex, vec2(0.5,0.5));
-        base = tcol.rgb;
+        baseColor = texture(diffuseTex, fragUV).rgb;
     }
+
+    // Sample PBR maps
+    float roughness = texture(roughnessMap, fragUV).r;
+    float metallic = texture(metallicMap, fragUV).r;
+
+    // Fresnel base reflectance
+    vec3 F0 = mix(vec3(0.04), baseColor, metallic);
+
     for (int i = 0; i < numLights; ++i) {
-        vec3 lightDir = normalize(lights[i].pos - FragPos);
-        float diff = max(dot(norm, lightDir), 0.0);
-        vec3 halfway = normalize(lightDir + viewDir);
-        float spec = pow(max(dot(norm, halfway), 0.0), 32.0);
-        vec3 ambient = 0.05 * lights[i].color * base;
-        vec3 diffuse = diff * lights[i].color * base;
-        vec3 specular = spec * lights[i].color * 0.5;
-        result += (ambient + diffuse + specular) * lights[i].intensity;
+        vec3 lightDir = normalize(lights[i].pos - fragPosition);
+        vec3 halfwayDir = normalize(lightDir + viewDir);
+
+        // Diffuse and specular components
+        float diff = max(dot(normal, lightDir), 0.0);
+        float specAngle = max(dot(normal, halfwayDir), 0.0);
+        float specPower = mix(64.0, 2.0, roughness); // sharper highlights with low roughness
+        float specStrength = pow(specAngle, specPower);
+
+        vec3 diffuse = (1.0 - metallic) * baseColor * diff;
+        vec3 specular = specStrength * F0;
+        vec3 ambient = 0.05 * lights[i].color * baseColor;
+
+        finalColor += (ambient + diffuse + specular) * lights[i].intensity;
     }
-    FragColor = vec4(result, 1.0);
+
+    FragColor = vec4(clamp(finalColor, 0.0, 1.0), 1.0);
 }
 )GLSL";
+
 
 Renderer::Renderer() {}
 Renderer::~Renderer() { if (shader) delete shader; }
@@ -103,6 +135,15 @@ void Renderer::Render(const Camera& cam, const Model& model, const std::vector<L
         } else {
             shader->SetInt("useTexture", 0);
         }
+        if (model.GetRoughnessMap()) {
+            model.GetRoughnessMap()->Bind(1);
+            shader->SetInt("roughnessMap", 1);
+        }
+        if (model.GetMetallicMap()) {
+            model.GetMetallicMap()->Bind(2);
+            shader->SetInt("metallicMap", 2);
+        }
+
         model.meshes[i].Draw();
     }
 }

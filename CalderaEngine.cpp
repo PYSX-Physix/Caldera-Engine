@@ -552,7 +552,6 @@ int main() {
         }
 
         {
-            // TODO: Possibly add renaming assets in the world outliner or properties section
             static bool openRenameModal = false;
             static char renameBuffer[128] = "";
             static size_t renameTargetIndex = (size_t)-1;
@@ -570,8 +569,13 @@ int main() {
                 }
 
                 if (ImGui::BeginPopupContextItem()) {
+                    
                     if (ImGui::MenuItem("Rename")) {
-                        // Rename logic...
+                        strncpy(renameBuffer, sceneObjects[i].name.c_str(), sizeof(renameBuffer));
+                        renameBuffer[sizeof(renameBuffer) - 1] = '\0';
+                        renameTargetIndex = i;
+                        openRenameModal = true;
+                        ImGui::CloseCurrentPopup();
                     }
 
                     if (ImGui::MenuItem("Delete")) {

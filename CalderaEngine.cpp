@@ -109,7 +109,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Required on macOS
     #endif
 
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Caldera Engine", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "CalderaGL Engine", NULL, NULL);
     glfwMakeContextCurrent(window);
 
     // Initialize GLEW

@@ -54,6 +54,9 @@ target_include_directories(CalderaEngine PRIVATE
     engine
     ui
     misc
+    GLFW
+    glm
+    glad
 )
 
 target_link_libraries(CalderaEngine PRIVATE
@@ -62,6 +65,6 @@ target_link_libraries(CalderaEngine PRIVATE
     "-framework IOKit"
     "-framework CoreVideo"
     glfw
-    GLEW
+    GLAD
     assimp
 )

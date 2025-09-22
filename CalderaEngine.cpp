@@ -80,8 +80,8 @@
 #include "imconfig.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include "glad/glad.h"
+#include "GLFW/glfw3.h"
 #include <iostream>
 #include "renderer/Renderer.h"
 #include "renderer/Model.h"
@@ -101,24 +101,18 @@
 int main() {
     // Initialize GLFW
     glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    // MacOS for some reason likes 3.2 but not other versions
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    #ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Required on macOS
-    #endif
 
     GLFWwindow* window = glfwCreateWindow(1280, 720, "CalderaGL Engine", NULL, NULL);
     glfwMakeContextCurrent(window);
 
-    // Initialize GLEW
-    glewExperimental = GL_TRUE;
-    if (glewInit() != GLEW_OK) {
-        std::cerr << "Failed to initialize GLEW" << std::endl;
+    // Initialize GLAD
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        std::cerr << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
-
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -131,7 +125,7 @@ int main() {
 
     // Setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 150"); // macOS-friendly GLSL version
+    ImGui_ImplOpenGL3_Init("#version 430");
 
     // Setup renderer
     Renderer renderer;

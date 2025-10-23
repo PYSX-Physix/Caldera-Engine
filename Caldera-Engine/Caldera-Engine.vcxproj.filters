@@ -2,10 +2,13 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="Caldera-Engine.cpp" />
+    <ClCompile Include="include\imgui\imgui.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
     <ClCompile Include="include\imgui\imgui_draw.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="include\imgui\imgui_impl_dx11.cpp">
+    <ClCompile Include="include\imgui\imgui_impl_dx12.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
     <ClCompile Include="include\imgui\imgui_impl_win32.cpp">
@@ -17,20 +20,20 @@
     <ClCompile Include="include\imgui\imgui_widgets.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="include\imgui\imgui.cpp">
-      <Filter>ImGui</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ImGui">
-      <UniqueIdentifier>{2f76d666-4667-4562-b43f-98715daa73fe}</UniqueIdentifier>
+      <UniqueIdentifier>{e878698a-0b89-4988-a504-756ba77b0124}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\imgui\imconfig.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
     <ClInclude Include="include\imgui\imgui.h">
       <Filter>ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="include\imgui\imgui_impl_dx11.h">
+    <ClInclude Include="include\imgui\imgui_impl_dx12.h">
       <Filter>ImGui</Filter>
     </ClInclude>
     <ClInclude Include="include\imgui\imgui_impl_win32.h">

@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="Caldera-Engine/Caldera-Engine.vcxproj" />
+  <Project Path="Caldera-Engine/Caldera-Engine.vcxproj" Id="0f93e6f9-8d30-4c7b-bc2e-2b81f5f4ec1a" />
 </Solution>

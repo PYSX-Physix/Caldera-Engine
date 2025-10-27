@@ -19,6 +19,7 @@ struct FrameContext {
 
 class DescriptorHeapAllocator {
 public:
+    DescriptorHeapAllocator();
     void Create(ID3D12Device* device, ID3D12DescriptorHeap* heap);
     void Destroy();
     void Alloc(D3D12_CPU_DESCRIPTOR_HANDLE* outCpu, D3D12_GPU_DESCRIPTOR_HANDLE* outGpu);
@@ -29,11 +30,16 @@ private:
     D3D12_DESCRIPTOR_HEAP_TYPE heapType;
     D3D12_CPU_DESCRIPTOR_HANDLE startCpu;
     D3D12_GPU_DESCRIPTOR_HANDLE startGpu;
+	UINT64 descriptorSize = 0;
     UINT handleIncrement = 0;
     ImVector<int> freeIndices;
 };
 
 class Renderer {
+
+public:
+    Renderer();
+
 public:
     bool Initialize(HWND hwnd);
     void BeginFrame();
@@ -46,11 +52,13 @@ public:
 
     void HandleResize(HWND hwnd, UINT width, UINT height);
 
+    void CleanupRenderTargets();
+    void CreateRenderTargets();
+
+    Microsoft::WRL::ComPtr<IDXGISwapChain3> swapChain;
 
 private:
     bool CreateDevice(HWND hwnd);
-    void CreateRenderTargets();
-    void CleanupRenderTargets();
     void WaitForGPU();
     FrameContext* WaitForNextFrame();
 
@@ -58,7 +66,6 @@ private:
     Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
     Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
     Microsoft::WRL::ComPtr<ID3D12Fence> fence;
-    Microsoft::WRL::ComPtr<IDXGISwapChain3> swapChain;
 
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap;
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvHeap;

@@ -17,7 +17,12 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
     case WM_SIZE:
         if (renderer.GetDevice() && wParam != SIZE_MINIMIZED) {
-            renderer.HandleResize(hWnd, LOWORD(lParam), HIWORD(lParam));
+			renderer.CleanupRenderTargets();
+			DXGI_SWAP_CHAIN_DESC1 desc = {};
+            renderer.swapChain->GetDesc1(&desc);
+            HRESULT result = renderer.swapChain->ResizeBuffers(0, (UINT)LOWORD(lParam), (UINT)HIWORD(lParam), desc.Format, desc.Flags);
+            IM_ASSERT(SUCCEEDED(result) && "Failed to resize swapchain.");
+            renderer.CreateRenderTargets();
         }
         return 0;
     case WM_SYSCOMMAND:
@@ -59,7 +64,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
         }
         if (done) break;
 
-        /* DO NOT PUT LAYOUT CODE HERE */
+        /* DO NOT PUT LAYOUT CODE HERE ONLY PUT EDITOR BASE FUNCTION FOR CREATING LAYOUT*/
         renderer.BeginFrame();
         ImGui::DockSpaceOverViewport();
         {

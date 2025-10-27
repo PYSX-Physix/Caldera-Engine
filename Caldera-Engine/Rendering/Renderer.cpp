@@ -1,8 +1,19 @@
 #include "Renderer.h"
+#include "imconfig.h"
 #include <dxgidebug.h>
 #include <cassert>
 
 using Microsoft::WRL::ComPtr;
+
+Renderer::Renderer()
+    : frameIndex(0),
+    fenceValue(0),
+    swapChainWaitableObject(nullptr)
+{
+    for (auto& handle : rtvHandles)
+        handle.ptr = 0;
+}
+
 
 bool Renderer::Initialize(HWND hwnd) {
     if (!CreateDevice(hwnd)) return false;
@@ -79,17 +90,25 @@ void Renderer::BeginFrame() {
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
+
 }
 
 void Renderer::HandleResize(HWND hwnd, UINT width, UINT height) {
     float dpiScale = ImGui_ImplWin32_GetDpiScaleForMonitor(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST));
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.Fonts->Clear(); // Clear existing fonts
+    io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 16.0f * dpiScale); // Re-add with scaled size
+    io.Fonts->Build(); // Rebuild font atlas
+
     ImGui::GetStyle().ScaleAllSizes(dpiScale);
-    ImGui::GetIO().FontGlobalScale = dpiScale;
+    io.FontGlobalScale = 1.0f; // Reset global scale since font size is now baked in
 
     CleanupRenderTargets();
     swapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
     CreateRenderTargets();
 }
+
 
 
 void Renderer::EndFrame() {
@@ -286,6 +305,16 @@ void Renderer::WaitForGPU() {
     fence->SetEventOnCompletion(fenceValue, fenceEvent);
     WaitForSingleObject(fenceEvent, INFINITE);
 }
+
+DescriptorHeapAllocator::DescriptorHeapAllocator()
+    : heap(nullptr),
+    heapType(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV),
+    startCpu({ 0 }),
+    startGpu({ 0 }),
+    descriptorSize(0)
+{
+}
+
 
 void DescriptorHeapAllocator::Create(ID3D12Device* device, ID3D12DescriptorHeap* heap) {
     this->heap = heap;

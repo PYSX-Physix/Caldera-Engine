@@ -23,7 +23,8 @@ bool Renderer::Initialize(HWND hwnd) {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; 
     io.ConfigDpiScaleFonts = true;
     io.ConfigDpiScaleViewports = true;
     float scale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint({ 0, 0 }, MONITOR_DEFAULTTOPRIMARY));
@@ -115,7 +116,7 @@ void Renderer::EndFrame() {
     ImGui::Render();
     commandList->SetDescriptorHeaps(1, srvHeap.GetAddressOf());
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList.Get());
-
+    ImGuiIO& io = ImGui::GetIO();
     D3D12_RESOURCE_BARRIER barrier = {};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Transition.pResource = renderTargets[frameIndex].Get();
@@ -132,9 +133,9 @@ void Renderer::EndFrame() {
     fenceValue++;
     commandQueue->Signal(fence.Get(), fenceValue);
     frameContexts[frameIndex].fenceValue = fenceValue;
-    if (multipleViewports == true) {
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
+        ImGui::RenderPlatformWindowsDefault(nullptr, (void*)commandList.Get());
     }
 }
 

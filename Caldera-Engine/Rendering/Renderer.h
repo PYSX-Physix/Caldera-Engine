@@ -7,13 +7,15 @@
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx12.h"
 
+using namespace Microsoft::WRL;
+
 // Constants
 constexpr int NUM_FRAMES_IN_FLIGHT = 2;
 constexpr int NUM_BACK_BUFFERS = 2;
 constexpr int SRV_HEAP_SIZE = 128;
 
 struct FrameContext {
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator;
+    ComPtr<ID3D12CommandAllocator> commandAllocator;
     UINT64 fenceValue = 0;
 };
 
@@ -55,23 +57,23 @@ public:
     void CleanupRenderTargets();
     void CreateRenderTargets();
 
-    Microsoft::WRL::ComPtr<IDXGISwapChain3> swapChain;
+    ComPtr<IDXGISwapChain3> swapChain;
 
 private:
     bool CreateDevice(HWND hwnd);
     void WaitForGPU();
     FrameContext* WaitForNextFrame();
 
-    Microsoft::WRL::ComPtr<ID3D12Device> device;
-    Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
-    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
-    Microsoft::WRL::ComPtr<ID3D12Fence> fence;
+    ComPtr<ID3D12Device> device;
+    ComPtr<ID3D12CommandQueue> commandQueue;
+    ComPtr<ID3D12GraphicsCommandList> commandList;
+    ComPtr<ID3D12Fence> fence;
 
-    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap;
-    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvHeap;
+    ComPtr<ID3D12DescriptorHeap> rtvHeap;
+    ComPtr<ID3D12DescriptorHeap> srvHeap;
     DescriptorHeapAllocator srvAllocator;
 
-    Microsoft::WRL::ComPtr<ID3D12Resource> renderTargets[NUM_BACK_BUFFERS];
+    ComPtr<ID3D12Resource> renderTargets[NUM_BACK_BUFFERS];
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[NUM_BACK_BUFFERS];
 
     FrameContext frameContexts[NUM_FRAMES_IN_FLIGHT];

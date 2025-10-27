@@ -133,6 +133,7 @@
   <ItemGroup>
     <ClCompile Include="Caldera-Engine.cpp" />
     <ClCompile Include="Editor\Caldera-Editor.cpp" />
+    <ClCompile Include="Editor\EditorContentBrowser.cpp" />
     <ClCompile Include="include\imgui\imgui.cpp" />
     <ClCompile Include="include\imgui\imgui_draw.cpp" />
     <ClCompile Include="include\imgui\imgui_impl_dx12.cpp" />
@@ -146,6 +147,7 @@
     <ClInclude Include="Assets\Mesh.h" />
     <ClInclude Include="Assets\Texture.h" />
     <ClInclude Include="Editor\Caldera-Editor.h" />
+    <ClInclude Include="Editor\EditorContentBrowser.h" />
     <ClInclude Include="include\imgui\imconfig.h" />
     <ClInclude Include="include\imgui\imgui.h" />
     <ClInclude Include="include\imgui\imgui_impl_dx12.h" />

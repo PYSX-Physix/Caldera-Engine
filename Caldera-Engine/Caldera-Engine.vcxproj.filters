@@ -26,6 +26,9 @@
       <Filter>Editor</Filter>
     </ClCompile>
     <ClCompile Include="Caldera-Engine.cpp" />
+    <ClCompile Include="Editor\EditorContentBrowser.cpp">
+      <Filter>Editor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ImGui">
@@ -85,6 +88,9 @@
       <Filter>Assets</Filter>
     </ClInclude>
     <ClInclude Include="Editor\Caldera-Editor.h">
+      <Filter>Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\EditorContentBrowser.h">
       <Filter>Editor</Filter>
     </ClInclude>
   </ItemGroup>

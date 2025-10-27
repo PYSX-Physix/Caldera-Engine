@@ -40,8 +40,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
     ImGui_ImplWin32_EnableDpiAwareness();
     float scale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint({ 0, 0 }, MONITOR_DEFAULTTOPRIMARY));
 
-    WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, hInstance, nullptr, nullptr, nullptr, nullptr, L"CalderaEngine", nullptr };
+    WNDCLASSEX wc = { sizeof(WNDCLASSEX), 0, WndProc, 0L, 0L, hInstance, nullptr, nullptr, nullptr, nullptr, L"CalderaEngine", nullptr };
     ::RegisterClassEx(&wc);
+	wc.style = CS_OWNDC| CS_HREDRAW | CS_VREDRAW;
     HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"Caldera Engine", WS_OVERLAPPEDWINDOW, 100, 100, int(1280 * scale), int(800 * scale), nullptr, nullptr, wc.hInstance, nullptr);
 
     if (!renderer.Initialize(hwnd)) {

@@ -39,9 +39,9 @@ bool Renderer::Initialize(HWND hwnd) {
     ImGui::StyleColorsDark();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         ImGuiStyle& style = ImGui::GetStyle();
-        style.WindowRounding = 0.0f;
+        style.WindowRounding = 3.0f;
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-        style.FontSizeBase = 16.0f;
+        style.FontSizeBase = 24.0f;
     }
 
     ImGui_ImplWin32_Init(hwnd);
@@ -116,7 +116,13 @@ void Renderer::EndFrame() {
     ImGui::Render();
     commandList->SetDescriptorHeaps(1, srvHeap.GetAddressOf());
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList.Get());
+
     ImGuiIO& io = ImGui::GetIO();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault(nullptr, (void*)commandList.Get()); // Must happen before Close()
+    }
+
     D3D12_RESOURCE_BARRIER barrier = {};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Transition.pResource = renderTargets[frameIndex].Get();
@@ -133,10 +139,7 @@ void Renderer::EndFrame() {
     fenceValue++;
     commandQueue->Signal(fence.Get(), fenceValue);
     frameContexts[frameIndex].fenceValue = fenceValue;
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault(nullptr, (void*)commandList.Get());
-    }
+
 }
 
 void Renderer::Shutdown() {

@@ -11,13 +11,19 @@ void EditorBase::ConstructEditorLayout()
 
 void EditorBase::ConstructContentBrowser()
 {
-    if (showContentBrowser == true) {
-		EditorContentBrowser contentBrowser;
-		contentBrowser.SetRootDirectory(std::filesystem::current_path());
-		contentBrowser.Render(&showContentBrowser);
+    if (showContentBrowser == true) 
+    {
+		contentbrowser.Render(&showContentBrowser);
 	}
 }
 
+
+EditorBase::EditorBase()
+{
+    contentbrowser.SetRootDirectory(std::filesystem::current_path());
+    contentbrowser.SetRenderer(&renderer); // assuming renderer is valid and initialized
+
+}
 
 void EditorBase::CreateWindowMenu()
 {

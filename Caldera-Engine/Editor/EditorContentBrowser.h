@@ -1,17 +1,47 @@
 #pragma once
 
 #include <filesystem>
+#include <unordered_map>
+#include <d3d12.h>
+#include <wrl/client.h>
+#include "imgui.h"
+#include "../Rendering/Renderer.h"
+
+using namespace Microsoft::WRL;
+
+
+class Renderer;
 
 class EditorContentBrowser {
 public:
     void SetRootDirectory(const std::filesystem::path& root);
     void Render(bool* isOpen);
 
+
+    void SetRenderer(Renderer* r);
+
+    bool canOpen;
+
 private:
     std::filesystem::path rootPath;
     std::filesystem::path currentDirectory;
+    std::filesystem::path selectedFile;
 
+    std::unordered_map<std::filesystem::path, ComPtr<ID3D12Resource>> previewTextures;
+    std::unordered_map<std::filesystem::path, ImTextureID> previewTextureIDs;
+
+	Renderer* renderer = nullptr;
 
     void DrawDirectoryTree(const std::filesystem::path& path);
-    void DrawAssetGrid(const std::filesystem::path& path);
+    void DrawAssetList(const std::filesystem::path& path);
+    void DrawPreviewPanel();
+
+
+	ImTextureID LoadPreviewTexture(const std::filesystem::path& filePath);
+    ImTextureID CreateTextureFromFile(
+        const std::filesystem::path& path,
+        ID3D12Device* device,
+        ID3D12DescriptorHeap* srvHeap,
+        ComPtr<ID3D12Resource>& outTexture
+    );
 };

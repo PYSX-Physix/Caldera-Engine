@@ -1,6 +1,16 @@
 #pragma once
 
+#include "EditorContentBrowser.h"
+#include "../Rendering/Renderer.h"
+
 class EditorBase {
+public:
+	EditorBase();
+
+	EditorContentBrowser contentbrowser;
+
+	Renderer renderer;
+
 public:
 	void CreateWindowMenu();
 	void CreateEditorViewport();

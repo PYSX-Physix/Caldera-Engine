@@ -41,7 +41,7 @@ bool Renderer::Initialize(HWND hwnd) {
         ImGuiStyle& style = ImGui::GetStyle();
         style.WindowRounding = 3.0f;
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-        style.FontSizeBase = 24.0f;
+        style.FontSizeBase = 16.0f;
     }
 
     ImGui_ImplWin32_Init(hwnd);

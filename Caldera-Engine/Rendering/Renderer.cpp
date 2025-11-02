@@ -152,6 +152,16 @@ void Renderer::Shutdown() {
     CloseHandle(fenceEvent);
 }
 
+UINT Renderer::AllocateDescriptor()
+{
+    if (currentDescriptorIndex >= maxDescriptors) {
+        // Handle descriptor heap overflow - you might want to create a new heap
+        // For now, wrap around to the beginning
+        currentDescriptorIndex = 0;
+    }
+    return currentDescriptorIndex++;
+}
+
 bool Renderer::CreateDevice(HWND hwnd) {
     // Device creation, swap chain setup, descriptor heaps, command queue, etc.
     // Setup swap chain

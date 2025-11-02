@@ -51,7 +51,10 @@ public:
     ID3D12Device* GetDevice() const { return device.Get(); }
     ID3D12GraphicsCommandList* GetCommandList() const { return commandList.Get(); }
     ID3D12DescriptorHeap* GetSrvHeap() const { return srvHeap.Get(); }
+    ID3D12CommandQueue* GetCommandQueue() { return commandQueue.Get(); };
 
+
+    void WaitForGPU();
     void HandleResize(HWND hwnd, UINT width, UINT height);
 
     void CleanupRenderTargets();
@@ -59,9 +62,10 @@ public:
 
     ComPtr<IDXGISwapChain3> swapChain;
 
+	UINT AllocateDescriptor();
+
 private:
     bool CreateDevice(HWND hwnd);
-    void WaitForGPU();
     FrameContext* WaitForNextFrame();
 
     ComPtr<ID3D12Device> device;
@@ -84,4 +88,7 @@ private:
     bool tearingSupported = false;
     bool swapChainOccluded = false;
     bool multipleViewports = false;
+
+    UINT currentDescriptorIndex = 0;
+    const UINT maxDescriptors = 1024;
 };

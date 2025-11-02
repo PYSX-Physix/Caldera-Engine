@@ -5,6 +5,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "../include/stb_image.h"
 #include "../include/d3dx12.h"
+#include "imgui.h"
 
 void EditorContentBrowser::SetRootDirectory(const std::filesystem::path& root) {
     rootPath = root;
@@ -213,8 +214,8 @@ void EditorContentBrowser::DrawContextMenu(const std::filesystem::path& path) {
 ImTextureID EditorContentBrowser::GetFileIcon(const std::filesystem::path& path)
 {
     static bool initialized = false;
-    static ImTextureID defaultFileIcon = NULL;
-    static ImTextureID folderIcon = NULL;
+    static ImTextureID defaultFileIcon = (ImTextureID)0;
+    static ImTextureID folderIcon = (ImTextureID)0;
     static std::unordered_map<std::string, ImTextureID> fileTypeIcons;
 
     // Initialize icons if not done yet
@@ -273,7 +274,7 @@ ImTextureID EditorContentBrowser::GetFileIcon(const std::filesystem::path& path)
 
     // Return appropriate icon based on file type
     if (std::filesystem::is_directory(path)) {
-        return folderIcon ? folderIcon : NULL;
+        return folderIcon ? folderIcon : (ImTextureID)0;
     }
 
     // Get file extension and convert to lowercase
@@ -282,12 +283,12 @@ ImTextureID EditorContentBrowser::GetFileIcon(const std::filesystem::path& path)
 
     // Look up icon for this file type
     auto it = fileTypeIcons.find(extension);
-    if (it != fileTypeIcons.end() && it->second != NULL) {
+    if (it != fileTypeIcons.end() && it->second != (ImTextureID)0) {
         return it->second;
     }
 
     // Return default file icon if no specific icon found
-    return defaultFileIcon ? defaultFileIcon : NULL;
+    return defaultFileIcon ? defaultFileIcon : (ImTextureID)0;
 }
 
 ImTextureID EditorContentBrowser::LoadPreviewTexture(const std::filesystem::path& filePath)
@@ -302,7 +303,7 @@ ImTextureID EditorContentBrowser::CreateTextureFromFile(
     ComPtr<ID3D12Resource>& outTexture)
 {
     if (!device || !srvHeap || !std::filesystem::exists(path)) {
-        return NULL;
+        return (ImTextureID)0;
     }
 
     // Load the image using stb_image
@@ -452,5 +453,10 @@ ImTextureID EditorContentBrowser::CreateTextureFromFile(
     commandList.Reset();
     uploadBuffer.Reset();
 
-    return reinterpret_cast<ImTextureID>(gpuHandle.ptr);
+    // Convert GPU handle to ImTextureID
+    #ifdef _WIN64
+        return (ImTextureID)gpuHandle.ptr;
+    #else
+        return (ImTextureID)(UINT32)gpuHandle.ptr;
+    #endif
 }

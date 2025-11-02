@@ -174,13 +174,16 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Editor\Icons\file.png">
+    <Image Include="Resources\Icons\file.png">
+      <DeploymentContent>true</DeploymentContent>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </Image>
-    <Image Include="Editor\Icons\folder.png">
+    <Image Include="Resources\Icons\folder.png">
+      <DeploymentContent>true</DeploymentContent>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </Image>
-    <Image Include="Editor\Icons\image.png">
+    <Image Include="Resources\Icons\image.png">
+      <DeploymentContent>true</DeploymentContent>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </Image>
   </ItemGroup>

@@ -222,14 +222,14 @@ ImTextureID EditorContentBrowser::GetFileIcon(const std::filesystem::path& path)
     if (!initialized && renderer) {
         // Load default icons
         defaultFileIcon = CreateTextureFromFile(
-            rootPath / "Editor/Icons/file.png",
+            rootPath / "Resources/Icons/file.png",
             renderer->GetDevice(),
             renderer->GetSrvHeap(),
             previewTextures["default_file"]
         );
 
         folderIcon = CreateTextureFromFile(
-            rootPath / "Editor/Icons/folder.png",
+            rootPath / "Resources/Icons/folder.png",
             renderer->GetDevice(),
             renderer->GetSrvHeap(),
             previewTextures["folder"]
@@ -243,15 +243,17 @@ ImTextureID EditorContentBrowser::GetFileIcon(const std::filesystem::path& path)
 
         std::vector<IconMapping> iconMappings = {
             // 3D asset files
-            {{"fbx", "obj", "gltf", "glb"}, "Editor/Icons/model.png"},
+            {{"fbx", "obj", "gltf", "glb"}, "Resources/Icons/model.png"},
             // Image files
-            {{"png", "jpg", "jpeg", "tga", "bmp"}, "Editor/Icons/image.png"},
+            {{"png", "jpg", "jpeg", "tga", "bmp"}, "Resources/Icons/image.png"},
             // Shader files
-            {{"hlsl", "glsl", "shader"}, "Editor/Icons/shader.png"},
+            {{"hlsl", "glsl", "shader"}, "Resources/Icons/shader.png"},
             // Material files
-            {{"mat", "material"}, "Editor/Icons/material.png"},
+            {{"mat", "material"}, "Resources/Icons/material.png"},
             // Scene files
-            {{"scene"}, "Editor/Icons/scene.png"}
+            {{"scene"}, "Resources/Icons/scene.png"},
+            // Configuration files
+			{{"ini", "config"}, "Resources/Icons/config.png"}
         };
 
         // Load all file type specific icons

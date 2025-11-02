@@ -122,13 +122,13 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Editor\Icons\file.png">
+    <Image Include="Resources\Icons\file.png">
       <Filter>Icons</Filter>
     </Image>
-    <Image Include="Editor\Icons\folder.png">
+    <Image Include="Resources\Icons\folder.png">
       <Filter>Icons</Filter>
     </Image>
-    <Image Include="Editor\Icons\image.png">
+    <Image Include="Resources\Icons\image.png">
       <Filter>Icons</Filter>
     </Image>
   </ItemGroup>

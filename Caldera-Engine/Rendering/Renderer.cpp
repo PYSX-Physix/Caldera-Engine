@@ -24,7 +24,7 @@ bool Renderer::Initialize(HWND hwnd) {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; 
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     io.ConfigDpiScaleFonts = true;
     io.ConfigDpiScaleViewports = true;
     float scale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint({ 0, 0 }, MONITOR_DEFAULTTOPRIMARY));
@@ -33,7 +33,7 @@ bool Renderer::Initialize(HWND hwnd) {
     ImGui::GetStyle().ScaleAllSizes(scale);
 
     // Scale fonts
-    
+
     io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf");
 
     ImGui::StyleColorsDark();
@@ -190,7 +190,8 @@ bool Renderer::CreateDevice(HWND hwnd) {
     {
         ID3D12InfoQueue* pInfoQueue = nullptr;
         device->QueryInterface(IID_PPV_ARGS(&pInfoQueue));
-        infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+        // FIXED: Changed infoQueue to pInfoQueue
+        pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
         pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
         pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
         pInfoQueue->Release();

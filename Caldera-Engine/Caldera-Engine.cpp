@@ -17,8 +17,8 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
     case WM_SIZE:
         if (renderer.GetDevice() && wParam != SIZE_MINIMIZED) {
-			renderer.CleanupRenderTargets();
-			DXGI_SWAP_CHAIN_DESC1 desc = {};
+            renderer.CleanupRenderTargets();
+            DXGI_SWAP_CHAIN_DESC1 desc = {};
             renderer.swapChain->GetDesc1(&desc);
             HRESULT result = renderer.swapChain->ResizeBuffers(0, (UINT)LOWORD(lParam), (UINT)HIWORD(lParam), desc.Format, desc.Flags);
             IM_ASSERT(SUCCEEDED(result) && "Failed to resize swapchain.");
@@ -40,9 +40,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
     ImGui_ImplWin32_EnableDpiAwareness();
     float scale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint({ 0, 0 }, MONITOR_DEFAULTTOPRIMARY));
 
-    WNDCLASSEX wc = { sizeof(WNDCLASSEX), 0, WndProc, 0L, 0L, hInstance, nullptr, nullptr, nullptr, nullptr, L"CalderaEngine", nullptr };
+    WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_OWNDC | CS_HREDRAW | CS_VREDRAW, WndProc, 0L, 0L, hInstance, nullptr, nullptr, nullptr, nullptr, L"CalderaEngine", nullptr };
     ::RegisterClassEx(&wc);
-	wc.style = CS_OWNDC| CS_HREDRAW | CS_VREDRAW;
+
     HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"Caldera Engine", WS_OVERLAPPEDWINDOW, 100, 100, int(1280 * scale), int(800 * scale), nullptr, nullptr, wc.hInstance, nullptr);
 
     if (!renderer.Initialize(hwnd)) {
@@ -50,6 +50,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
         ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
         return 1;
     }
+
+    // Set the renderer for the editor after initialization
+    edbase.SetRenderer(&renderer);
 
     ::ShowWindow(hwnd, SW_SHOWDEFAULT);
     ::UpdateWindow(hwnd);

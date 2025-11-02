@@ -29,6 +29,18 @@
     <ClCompile Include="Editor\EditorContentBrowser.cpp">
       <Filter>Editor</Filter>
     </ClCompile>
+    <ClCompile Include="Assets\AssetManager.cpp">
+      <Filter>Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\Mesh.cpp">
+      <Filter>Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\Texture.cpp">
+      <Filter>Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="Input\InputManager.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ImGui">
@@ -45,6 +57,12 @@
     </Filter>
     <Filter Include="Editor">
       <UniqueIdentifier>{15f02c85-3d81-4b0c-b662-87218dd56471}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Helpers">
+      <UniqueIdentifier>{1590e170-5131-457a-90eb-b364dc77e90c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Icons">
+      <UniqueIdentifier>{f84d1511-541d-4b88-a001-cf04cfe7d199}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -93,8 +111,25 @@
     <ClInclude Include="Editor\EditorContentBrowser.h">
       <Filter>Editor</Filter>
     </ClInclude>
+    <ClInclude Include="include\d3dx12.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\stb_image.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Editor\Icons\file.png">
+      <Filter>Icons</Filter>
+    </Image>
+    <Image Include="Editor\Icons\folder.png">
+      <Filter>Icons</Filter>
+    </Image>
+    <Image Include="Editor\Icons\image.png">
+      <Filter>Icons</Filter>
+    </Image>
   </ItemGroup>
 </Project>

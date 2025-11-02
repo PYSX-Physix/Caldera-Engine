@@ -1,28 +1,32 @@
 #include "Caldera-Editor.h"
 #include "imgui.h"
 #include "EditorContentBrowser.h"
+#include "../Rendering/Renderer.h"
 
 void EditorBase::ConstructEditorLayout()
 {
     CreateWindowMenu();
-	CreateEditorViewport();
-	ConstructContentBrowser();
+    CreateEditorViewport();
+    ConstructContentBrowser();
 }
 
 void EditorBase::ConstructContentBrowser()
 {
-    if (showContentBrowser == true) 
+    if (showContentBrowser == true)
     {
-		contentbrowser.Render(&showContentBrowser);
-	}
+        contentbrowser.Render(&showContentBrowser);
+    }
 }
 
-
-EditorBase::EditorBase()
+EditorBase::EditorBase() : renderer(nullptr)
 {
     contentbrowser.SetRootDirectory(std::filesystem::current_path());
-    contentbrowser.SetRenderer(&renderer); // assuming renderer is valid and initialized
+}
 
+void EditorBase::SetRenderer(Renderer* r)
+{
+    renderer = r;
+    contentbrowser.SetRenderer(r);
 }
 
 void EditorBase::CreateWindowMenu()
@@ -70,5 +74,3 @@ void EditorBase::CreateEditorViewport()
         ImGui::End();
     }
 }
-
-

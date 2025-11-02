@@ -1,10 +1,10 @@
-#include "../Rendering/Renderer.h"
+#include "Renderer.h"
 #include "EditorContentBrowser.h"
 #include <algorithm>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "../include/stb_image.h"
-#include "../include/d3dx12.h"
+#include "stb_image.h"
+#include "d3dx12.h"
 #include "imgui.h"
 
 void EditorContentBrowser::SetRootDirectory(const std::filesystem::path& root) {

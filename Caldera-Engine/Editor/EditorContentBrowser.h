@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Rendering/Renderer.h"
+#include "Renderer.h"
 #include <filesystem>
 #include <string>
 #include <unordered_map>

@@ -1,7 +1,7 @@
 #include "Caldera-Editor.h"
 #include "imgui.h"
 #include "EditorContentBrowser.h"
-#include "../Rendering/Renderer.h"
+#include "Renderer.h"
 
 void EditorBase::ConstructEditorLayout()
 {

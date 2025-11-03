@@ -136,9 +136,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Assets\AssetManager.cpp" />
-    <ClCompile Include="Assets\Mesh.cpp" />
-    <ClCompile Include="Assets\Texture.cpp" />
+    <ClCompile Include="AssetSystem\AssetManager.cpp" />
+    <ClCompile Include="AssetSystem\Mesh.cpp" />
+    <ClCompile Include="AssetSystem\Texture.cpp" />
     <ClCompile Include="Caldera-Engine.cpp" />
     <ClCompile Include="Editor\Caldera-Editor.cpp" />
     <ClCompile Include="Editor\EditorContentBrowser.cpp" />
@@ -152,9 +152,9 @@
     <ClCompile Include="Rendering\Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Assets\AssetManager.h" />
-    <ClInclude Include="Assets\Mesh.h" />
-    <ClInclude Include="Assets\Texture.h" />
+    <ClInclude Include="AssetSystem\AssetManager.h" />
+    <ClInclude Include="AssetSystem\Mesh.h" />
+    <ClInclude Include="AssetSystem\Texture.h" />
     <ClInclude Include="Editor\Caldera-Editor.h" />
     <ClInclude Include="Editor\EditorContentBrowser.h" />
     <ClInclude Include="include\d3dx12.h" />
@@ -174,18 +174,27 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Resources\Icons\file.png">
+    <CopyFileToFolders Include="Resources\Icons\file.png">
       <DeploymentContent>true</DeploymentContent>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-    </Image>
-    <Image Include="Resources\Icons\folder.png">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)\Resources\Icons</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)\Resources\Icons</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Resources\Icons\folder.png">
       <DeploymentContent>true</DeploymentContent>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-    </Image>
-    <Image Include="Resources\Icons\image.png">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)\Resources\Icons</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)\Resources\Icons</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Resources\Icons\image.png">
       <DeploymentContent>true</DeploymentContent>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-    </Image>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)\Resources\Icons</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)\Resources\Icons</DestinationFolders>
+    </CopyFileToFolders>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -29,17 +29,17 @@
     <ClCompile Include="Editor\EditorContentBrowser.cpp">
       <Filter>Editor</Filter>
     </ClCompile>
-    <ClCompile Include="Assets\AssetManager.cpp">
-      <Filter>Assets</Filter>
-    </ClCompile>
-    <ClCompile Include="Assets\Mesh.cpp">
-      <Filter>Assets</Filter>
-    </ClCompile>
-    <ClCompile Include="Assets\Texture.cpp">
-      <Filter>Assets</Filter>
-    </ClCompile>
     <ClCompile Include="Input\InputManager.cpp">
       <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="AssetSystem\AssetManager.cpp">
+      <Filter>AssetSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="AssetSystem\Mesh.cpp">
+      <Filter>AssetSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="AssetSystem\Texture.cpp">
+      <Filter>AssetSystem</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -52,9 +52,6 @@
     <Filter Include="Input">
       <UniqueIdentifier>{d7ae3862-0ce9-4652-b740-3a411986faa7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Assets">
-      <UniqueIdentifier>{b2fe80c4-d458-40ad-84db-459fe640902d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Editor">
       <UniqueIdentifier>{15f02c85-3d81-4b0c-b662-87218dd56471}</UniqueIdentifier>
     </Filter>
@@ -63,6 +60,9 @@
     </Filter>
     <Filter Include="Icons">
       <UniqueIdentifier>{f84d1511-541d-4b88-a001-cf04cfe7d199}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AssetSystem">
+      <UniqueIdentifier>{b2fe80c4-d458-40ad-84db-459fe640902d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -96,15 +96,6 @@
     <ClInclude Include="InputManager.h">
       <Filter>Input</Filter>
     </ClInclude>
-    <ClInclude Include="Assets\AssetManager.h">
-      <Filter>Assets</Filter>
-    </ClInclude>
-    <ClInclude Include="Assets\Mesh.h">
-      <Filter>Assets</Filter>
-    </ClInclude>
-    <ClInclude Include="Assets\Texture.h">
-      <Filter>Assets</Filter>
-    </ClInclude>
     <ClInclude Include="Editor\Caldera-Editor.h">
       <Filter>Editor</Filter>
     </ClInclude>
@@ -117,19 +108,28 @@
     <ClInclude Include="include\stb_image.h">
       <Filter>Helpers</Filter>
     </ClInclude>
+    <ClInclude Include="AssetSystem\AssetManager.h">
+      <Filter>AssetSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="AssetSystem\Mesh.h">
+      <Filter>AssetSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="AssetSystem\Texture.h">
+      <Filter>AssetSystem</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Resources\Icons\file.png">
+    <CopyFileToFolders Include="Resources\Icons\file.png">
       <Filter>Icons</Filter>
-    </Image>
-    <Image Include="Resources\Icons\folder.png">
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Resources\Icons\folder.png">
       <Filter>Icons</Filter>
-    </Image>
-    <Image Include="Resources\Icons\image.png">
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Resources\Icons\image.png">
       <Filter>Icons</Filter>
-    </Image>
+    </CopyFileToFolders>
   </ItemGroup>
 </Project>

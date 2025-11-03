@@ -7,6 +7,7 @@
 #include "d3dx12.h"
 #include "imgui.h"
 
+
 void EditorContentBrowser::SetRootDirectory(const std::filesystem::path& root) {
     rootPath = root;
     currentDirectory = root;
@@ -25,7 +26,7 @@ void EditorContentBrowser::Render(bool* isOpen) {
     RenderNavigationBar();
 
     // Split view: Directory tree on left, content on right
-    const float treeViewWidth = 200.0f;
+    const float treeViewWidth = 300.0f;
     ImGui::BeginChild("DirectoryTree", ImVec2(treeViewWidth, 0), true);
     DrawDirectoryTree(rootPath);
     ImGui::EndChild();

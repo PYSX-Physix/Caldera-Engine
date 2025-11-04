@@ -14,19 +14,19 @@ void EditorBase::ConstructContentBrowser()
 {
     if (showContentBrowser == true)
     {
-        contentbrowser.Render(&showContentBrowser);
+        contentBrowser.Render(&showContentBrowser);
     }
 }
 
 EditorBase::EditorBase() : renderer(nullptr)
 {
-    contentbrowser.SetRootDirectory(std::filesystem::current_path());
+    contentBrowser.SetRootDirectory(std::filesystem::current_path());
 }
 
 void EditorBase::SetRenderer(Renderer* r)
 {
     renderer = r;
-    contentbrowser.SetRenderer(r);
+    contentBrowser.SetRenderer(r);
 }
 
 void EditorBase::CreateWindowMenu()
@@ -69,8 +69,36 @@ void EditorBase::CreateWindowMenu()
 void EditorBase::CreateEditorViewport()
 {
     if (showViewport == true) {
-        ImGui::Begin("Viewport", &showViewport);
-        ImGui::Text("This is just a test");
+        // Begin the viewport window with resizing capability
+        ImGui::Begin("Viewport", &showViewport, ImGuiWindowFlags_NoScrollbar);
+
+        // Get the size of the available content region in the window
+        ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+
+        // Ensure we have a valid renderer
+        if (renderer && renderer->swapChain) {
+            // Update the renderer viewport size if needed
+            renderer->SetViewportSize(viewportSize.x, viewportSize.y);
+
+            // Get the current back buffer as a texture ID for ImGui
+            ImTextureID textureID = renderer->GetCurrentBackBufferImGui();
+
+            // Display the rendered texture, maintaining aspect ratio
+            ImGui::Image(textureID, viewportSize);
+
+            // Handle viewport focusing and input capture
+            bool isViewportHovered = ImGui::IsItemHovered();
+            bool isViewportFocused = ImGui::IsWindowFocused();
+
+            // You can use these states to handle input specifically for the viewport
+            if (isViewportFocused && isViewportHovered) {
+                // Handle viewport-specific input here if needed
+            }
+        }
+        else {
+            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "No renderer available!");
+        }
+
         ImGui::End();
     }
 }

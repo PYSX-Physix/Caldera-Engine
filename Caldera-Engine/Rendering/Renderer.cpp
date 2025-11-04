@@ -2,6 +2,9 @@
 #include "imconfig.h"
 #include <dxgidebug.h>
 #include <cassert>
+#include <d3dcompiler.h>
+#include "d3dx12.h"
+#pragma comment(lib, "d3dcompiler.lib")
 
 using Microsoft::WRL::ComPtr;
 
@@ -19,6 +22,7 @@ bool Renderer::Initialize(HWND hwnd) {
     if (!CreateDevice(hwnd)) return false;
 
     srvAllocator.Create(device.Get(), srvHeap.Get());
+
     // ImGui setup
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -64,18 +68,24 @@ bool Renderer::Initialize(HWND hwnd) {
         self->srvAllocator.Free(cpu, gpu);
         };
 
+	CreateDefaultResources();
 
     ImGui_ImplDX12_Init(&init_info);
     return true;
 }
 
-void Renderer::BeginFrame() {
+
+void Renderer::BeginFrame()
+{
+    // Wait for previous frame and reset command allocator
     FrameContext* frameCtx = WaitForNextFrame();
     frameCtx->commandAllocator->Reset();
 
+    // Get current back buffer index and reset command list
     frameIndex = swapChain->GetCurrentBackBufferIndex();
     commandList->Reset(frameCtx->commandAllocator.Get(), nullptr);
 
+    // Transition the back buffer from present to render target
     D3D12_RESOURCE_BARRIER barrier = {};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Transition.pResource = renderTargets[frameIndex].Get();
@@ -84,14 +94,114 @@ void Renderer::BeginFrame() {
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     commandList->ResourceBarrier(1, &barrier);
 
-    commandList->OMSetRenderTargets(1, &rtvHandles[frameIndex], FALSE, nullptr);
-    const float clearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
-    commandList->ClearRenderTargetView(rtvHandles[frameIndex], clearColor, 0, nullptr);
+    // Set render target and clear it
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHandles[frameIndex];
+    D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = {}; // Add depth stencil view handle when implemented
+    commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr); // Replace nullptr with &dsvHandle when depth is added
 
+    // Clear the render target with a dark gray color
+    const float clearColor[] = { 0.1f, 0.1f, 0.1f, 1.0f };
+    commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+
+    if (dsvHandle.ptr != 0)
+    {
+        // Clear depth buffer (when implemented)
+        commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+    }
+
+    // Set viewport and scissor rect
+    D3D12_VIEWPORT viewport = { 0.0f, 0.0f, viewportWidth, viewportHeight, 0.0f, 1.0f };
+    D3D12_RECT scissorRect = { 0, 0, (LONG)viewportWidth, (LONG)viewportHeight };
+
+    commandList->RSSetViewports(1, &viewport);
+    commandList->RSSetScissorRects(1, &scissorRect);
+
+    // Render 3D scene
+    RenderScene();
+
+    // Begin ImGui frame
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
+}
 
+
+void Renderer::CreateGraphicsPipeline()
+{
+    // Create root signature
+    {
+        D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc = {};
+        rootSignatureDesc.NumParameters = 0;  // We'll add parameters later for transformations
+        rootSignatureDesc.NumStaticSamplers = 0;
+        rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+        ComPtr<ID3DBlob> signature;
+        ComPtr<ID3DBlob> error;
+        D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
+        device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&rootSignature));
+    }
+
+    // Create the pipeline state
+    {
+        // Define the vertex input layout
+        D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {
+            { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+            { "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+        };
+
+        // Create basic shaders
+        const char* vertexShader = R"(
+            struct VSInput {
+                float3 position : POSITION;
+                float3 color : COLOR;
+            };
+            struct PSInput {
+                float4 position : SV_POSITION;
+                float3 color : COLOR;
+            };
+            PSInput main(VSInput input) {
+                PSInput output;
+                output.position = float4(input.position, 1.0f);
+                output.color = input.color;
+                return output;
+            }
+        )";
+
+        const char* pixelShader = R"(
+            struct PSInput {
+                float4 position : SV_POSITION;
+                float3 color : COLOR;
+            };
+            float4 main(PSInput input) : SV_TARGET {
+                return float4(input.color, 1.0f);
+            }
+        )";
+
+        ComPtr<ID3DBlob> vertexShaderBlob;
+        ComPtr<ID3DBlob> pixelShaderBlob;
+        ComPtr<ID3DBlob> errorBlob;
+
+        D3DCompile(vertexShader, strlen(vertexShader), nullptr, nullptr, nullptr, "main", "vs_5_0", 0, 0, &vertexShaderBlob, &errorBlob);
+        D3DCompile(pixelShader, strlen(pixelShader), nullptr, nullptr, nullptr, "main", "ps_5_0", 0, 0, &pixelShaderBlob, &errorBlob);
+
+        // Create pipeline state object
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+        psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
+        psoDesc.pRootSignature = rootSignature.Get();
+        psoDesc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
+        psoDesc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
+        psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+        psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+        psoDesc.DepthStencilState.DepthEnable = FALSE;
+        psoDesc.DepthStencilState.StencilEnable = FALSE;
+        psoDesc.SampleMask = UINT_MAX;
+        psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        psoDesc.NumRenderTargets = 1;
+        psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+        psoDesc.SampleDesc.Count = 1;
+
+        device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState));
+    }
 }
 
 void Renderer::HandleResize(HWND hwnd, UINT width, UINT height) {
@@ -160,6 +270,220 @@ UINT Renderer::AllocateDescriptor()
         currentDescriptorIndex = 0;
     }
     return currentDescriptorIndex++;
+}
+
+ImTextureID Renderer::GetCurrentBackBufferImGui()
+{
+    // Get the current back buffer index
+    UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
+
+    // Get SRV descriptor handle
+    D3D12_CPU_DESCRIPTOR_HANDLE srvHandle = srvHeap->GetCPUDescriptorHandleForHeapStart();
+    srvHandle.ptr += backBufferIndex * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+    // Return the descriptor as a texture ID for ImGui
+    return (ImTextureID)srvHeap->GetGPUDescriptorHandleForHeapStart().ptr;
+}
+
+void Renderer::SetViewportSize(float width, float height)
+{
+    if (width != viewportWidth || height != viewportHeight) 
+    {
+        viewportWidth = width;
+        viewportHeight = height;
+        viewportResized = true;
+    }
+}
+
+void Renderer::CreateDefaultResources()
+{
+    // Define a simple cube vertex structure
+    struct Vertex {
+        float position[3];
+        float color[3];
+    };
+
+    // Create cube vertices (8 vertices for a cube)
+    Vertex cubeVertices[] = {
+        {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}}, // 0
+        {{ 0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}}, // 1
+        {{ 0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}}, // 2
+        {{-0.5f,  0.5f, -0.5f}, {1.0f, 1.0f, 0.0f}}, // 3
+        {{-0.5f, -0.5f,  0.5f}, {1.0f, 0.0f, 1.0f}}, // 4
+        {{ 0.5f, -0.5f,  0.5f}, {0.0f, 1.0f, 1.0f}}, // 5
+        {{ 0.5f,  0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}}, // 6
+        {{-0.5f,  0.5f,  0.5f}, {0.5f, 0.5f, 0.5f}}  // 7
+    };
+
+    // Create cube indices (36 indices for 12 triangles)
+    UINT cubeIndices[] = {
+        // Front face
+        0, 1, 2, 0, 2, 3,
+        // Back face
+        4, 6, 5, 4, 7, 6,
+        // Top face
+        3, 2, 6, 3, 6, 7,
+        // Bottom face
+        0, 5, 1, 0, 4, 5,
+        // Left face
+        0, 3, 7, 0, 7, 4,
+        // Right face
+        1, 5, 6, 1, 6, 2
+    };
+
+    // Create vertex buffer
+    {
+        const UINT vertexBufferSize = sizeof(cubeVertices);
+
+        D3D12_HEAP_PROPERTIES heapProps = { D3D12_HEAP_TYPE_UPLOAD };
+        D3D12_RESOURCE_DESC bufferDesc = {};
+        bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+        bufferDesc.Width = vertexBufferSize;
+        bufferDesc.Height = 1;
+        bufferDesc.DepthOrArraySize = 1;
+        bufferDesc.MipLevels = 1;
+        bufferDesc.Format = DXGI_FORMAT_UNKNOWN;
+        bufferDesc.SampleDesc.Count = 1;
+        bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+        device->CreateCommittedResource(
+            &heapProps,
+            D3D12_HEAP_FLAG_NONE,
+            &bufferDesc,
+            D3D12_RESOURCE_STATE_GENERIC_READ,
+            nullptr,
+            IID_PPV_ARGS(&vertexBuffer));
+
+        // Copy vertex data to the buffer
+        UINT8* pVertexDataBegin;
+        vertexBuffer->Map(0, nullptr, reinterpret_cast<void**>(&pVertexDataBegin));
+        memcpy(pVertexDataBegin, cubeVertices, vertexBufferSize);
+        vertexBuffer->Unmap(0, nullptr);
+
+        // Initialize the vertex buffer view
+        vertexBufferView.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
+        vertexBufferView.StrideInBytes = sizeof(Vertex);
+        vertexBufferView.SizeInBytes = vertexBufferSize;
+    }
+
+    // Create index buffer
+    {
+        const UINT indexBufferSize = sizeof(cubeIndices);
+
+        D3D12_HEAP_PROPERTIES heapProps = { D3D12_HEAP_TYPE_UPLOAD };
+        D3D12_RESOURCE_DESC bufferDesc = {};
+        bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+        bufferDesc.Width = indexBufferSize;
+        bufferDesc.Height = 1;
+        bufferDesc.DepthOrArraySize = 1;
+        bufferDesc.MipLevels = 1;
+        bufferDesc.Format = DXGI_FORMAT_UNKNOWN;
+        bufferDesc.SampleDesc.Count = 1;
+        bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+        device->CreateCommittedResource(
+            &heapProps,
+            D3D12_HEAP_FLAG_NONE,
+            &bufferDesc,
+            D3D12_RESOURCE_STATE_GENERIC_READ,
+            nullptr,
+            IID_PPV_ARGS(&indexBuffer));
+
+        // Copy index data to the buffer
+        UINT8* pIndexDataBegin;
+        indexBuffer->Map(0, nullptr, reinterpret_cast<void**>(&pIndexDataBegin));
+        memcpy(pIndexDataBegin, cubeIndices, indexBufferSize);
+        indexBuffer->Unmap(0, nullptr);
+
+        // Initialize the index buffer view
+        indexBufferView.BufferLocation = indexBuffer->GetGPUVirtualAddress();
+        indexBufferView.Format = DXGI_FORMAT_R32_UINT;
+        indexBufferView.SizeInBytes = indexBufferSize;
+    }
+}
+
+void Renderer::RenderScene()
+{
+    if (!pipelineState)
+    {
+        // Skip rendering if pipeline state isn't set up yet
+        return;
+    }
+
+    // Set the graphics root signature
+    commandList->SetGraphicsRootSignature(rootSignature.Get());
+
+    // Set the pipeline state
+    commandList->SetPipelineState(pipelineState.Get());
+
+    // Set primitive topology
+    commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    // Set vertex and index buffers
+    if (vertexBuffer && indexBuffer)
+    {
+        commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
+        commandList->IASetIndexBuffer(&indexBufferView);
+
+        // Update constant buffer with latest camera/transform data
+        // Assuming we're using slot 0 for our constant buffer
+        commandList->SetGraphicsRootConstantBufferView(0, constantBuffer->GetGPUVirtualAddress());
+
+        // Draw the geometry
+        // Using 36 indices for a cube (6 faces * 2 triangles * 3 vertices)
+        commandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
+    }
+}
+
+
+void Renderer::CreateDepthBuffer()
+{
+    D3D12_HEAP_PROPERTIES heapProps = {};
+    heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
+    heapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+    heapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+
+    D3D12_RESOURCE_DESC depthDesc = {};
+    depthDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    depthDesc.Width = (UINT64)viewportWidth;
+    depthDesc.Height = (UINT)viewportHeight;
+    depthDesc.DepthOrArraySize = 1;
+    depthDesc.MipLevels = 1;
+    depthDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    depthDesc.SampleDesc.Count = 1;
+    depthDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+    D3D12_CLEAR_VALUE clearValue = {};
+    clearValue.Format = DXGI_FORMAT_D32_FLOAT;
+    clearValue.DepthStencil.Depth = 1.0f;
+
+    device->CreateCommittedResource(
+        &heapProps,
+        D3D12_HEAP_FLAG_NONE,
+        &depthDesc,
+        D3D12_RESOURCE_STATE_DEPTH_WRITE,
+        &clearValue,
+        IID_PPV_ARGS(&depthBuffer)
+    );
+
+    // Create DSV heap and view
+    D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
+    dsvHeapDesc.NumDescriptors = 1;
+    dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+    device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&dsvHeap));
+
+    dsvHandle = dsvHeap->GetCPUDescriptorHandleForHeapStart();
+    device->CreateDepthStencilView(depthBuffer.Get(), nullptr, dsvHandle);
+}
+
+void Renderer::UpdateViewport()
+{
+	CleanupRenderTargets();
+    swapChain->ResizeBuffers(0, (UINT)viewportWidth, (UINT)viewportHeight, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+
+	CreateRenderTargets();
+
+	float aspectRatio = viewportWidth / viewportHeight;
 }
 
 bool Renderer::CreateDevice(HWND hwnd) {

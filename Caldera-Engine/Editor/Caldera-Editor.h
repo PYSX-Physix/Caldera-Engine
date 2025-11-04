@@ -9,7 +9,7 @@ class EditorBase {
 public:
 	EditorBase();
 
-	EditorContentBrowser contentbrowser;
+	EditorContentBrowser contentBrowser;
 
 	// Remove the Renderer instance - use external renderer instead
 	// Renderer renderer;

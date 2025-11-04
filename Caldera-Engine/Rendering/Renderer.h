@@ -63,10 +63,23 @@ public:
     ComPtr<IDXGISwapChain3> swapChain;
 
 	UINT AllocateDescriptor();
+    ImTextureID GetCurrentBackBufferImGui();
+
+    void SetViewportSize(float width, float height);
+    void RenderScene();
+
+	void CreateGraphicsPipeline();
+    bool multipleViewports = false;
 
 private:
     bool CreateDevice(HWND hwnd);
     FrameContext* WaitForNextFrame();
+	void CreateDepthBuffer();
+
+    void UpdateViewport();
+    void CreateDefaultScene(); // THIS IS FOR TESTING COMMENT/REMOVE CODE WHEN FINISHED
+
+    void CreateDefaultResources();
 
     ComPtr<ID3D12Device> device;
     ComPtr<ID3D12CommandQueue> commandQueue;
@@ -87,8 +100,33 @@ private:
     UINT frameIndex = 0;
     bool tearingSupported = false;
     bool swapChainOccluded = false;
-    bool multipleViewports = false;
 
     UINT currentDescriptorIndex = 0;
     const UINT maxDescriptors = 1024;
+
+    float viewportWidth = 800.0f;
+    float viewportHeight = 600.0f;
+    bool viewportResized = false;
+
+
+private:
+    ComPtr<ID3D12Resource> depthBuffer;
+    ComPtr<ID3D12DescriptorHeap> dsvHeap;
+    D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle;
+
+    // Add these to the private section
+private:
+    // Pipeline objects
+    ComPtr<ID3D12RootSignature> rootSignature;
+    ComPtr<ID3D12PipelineState> pipelineState;
+
+    // Vertex/Index buffer objects
+    ComPtr<ID3D12Resource> vertexBuffer;
+    ComPtr<ID3D12Resource> indexBuffer;
+    D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
+    D3D12_INDEX_BUFFER_VIEW indexBufferView;
+
+    // Constant buffer for MVP matrix
+    ComPtr<ID3D12Resource> constantBuffer;
+    UINT8* constantBufferData;
 };
